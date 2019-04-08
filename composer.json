@@ -1,15 +1,19 @@
 {
-  "name": "kuvardin/FastMysqli",
+  "name": "kuvardin/fast-mysqli",
   "description": "Simple PHP class for working with MySQL",
   "version": "1.0.0",
   "require": {
     "php": ">=7.0"
   },
-  "author": {
-    "name": "Maxim Kuvardin",
-    "email": "kuvard.in@mail.ru"
-  },
+  "authors": [
+    {
+      "name": "Maxim Kuvardin",
+      "email": "kuvard.in@mail.ru"
+    }
+  ],
   "autoload": {
-    "classmap": ["src"]
+    "classmap": [
+      "src"
+    ]
   }
 }
