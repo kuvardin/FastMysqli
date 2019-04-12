@@ -1,7 +1,5 @@
 <?php
 
-use \Exception;
-
 /**
  * Class FastMysqli
  * @author Maxim Kuvardin <kuvard.in@mail.ru>
@@ -21,7 +19,7 @@ class FastMysqli extends Mysqli
      * @param array|string|null $where
      * @param int|null $limit
      * @return bool|mysqli_result
-     * @throws Exception
+     * @throws Error
      */
     public function fast_update_row(string $table, $row, $where = null, int $limit = null)
     {
@@ -44,7 +42,7 @@ class FastMysqli extends Mysqli
      * @param array|string|null $where
      * @param int|null $limit
      * @return bool|mysqli_result
-     * @throws \Exception
+     * @throws Error
      */
     public function fast_delete_row(string $table, $where = null, int $limit = null)
     {
@@ -70,7 +68,7 @@ class FastMysqli extends Mysqli
      * @param string|null $sort
      * @param int|null $offset
      * @return bool|mysqli_result
-     * @throws Exception
+     * @throws Error
      */
     public function fast_select_row(string $table, $where = null, int $limit = null, string $ord = null, string $sort = null, int $offset = null)
     {
@@ -97,7 +95,7 @@ class FastMysqli extends Mysqli
      * @param string $table
      * @param array|string|null $where
      * @return int
-     * @throws Exception
+     * @throws Error
      */
     public function fast_count_row(string $table, $where = null): int
     {
@@ -115,7 +113,7 @@ class FastMysqli extends Mysqli
      * @param string $table
      * @param array|string $row
      * @return bool|mysqli_result
-     * @throws Exception
+     * @throws Error
      */
     public function fast_add_row(string $table, $row)
     {
@@ -127,7 +125,7 @@ class FastMysqli extends Mysqli
      * @param string $table
      * @param array|string $where
      * @return bool
-     * @throws Exception
+     * @throws Error
      */
     public function fast_check_row(string $table, $where): bool
     {
@@ -139,7 +137,7 @@ class FastMysqli extends Mysqli
      * @param $data
      * @param string $operation
      * @return string
-     * @throws \Exception
+     * @throws Error
      */
     public function fast_where_gen($data, string $operation = 'AND'): string
     {
@@ -178,13 +176,13 @@ class FastMysqli extends Mysqli
         }
 
         $data_type = gettype($data);
-        throw new Exception("Data must be array or string, {$data_type} given");
+        throw new Error("Data must be array or string, {$data_type} given");
     }
 
     /**
      * @param array|string $data
      * @return string
-     * @throws \Exception
+     * @throws Error
      */
     private function fast_datalist_gen($data): string
     {
@@ -210,7 +208,7 @@ class FastMysqli extends Mysqli
         }
 
         $data_type = gettype($data);
-        throw new Exception("Data must be array or string, {$data_type} given");
+        throw new Error("Data must be array or string, {$data_type} given");
     }
 
     /**
@@ -225,7 +223,7 @@ class FastMysqli extends Mysqli
     /**
      * @param string $query_text
      * @return bool|mysqli_result
-     * @throws \Exception
+     * @throws Error
      */
     public function q(string $query_text)
     {
@@ -233,7 +231,7 @@ class FastMysqli extends Mysqli
         $result = $this->query($query_text);
 
         if ($result === false) {
-            throw new Exception("Mysql error \"{$this->error}\" in query \"{$query_text}\"");
+            throw new Error("Mysql error \"{$this->error}\" in query \"{$query_text}\"");
         }
 
         return $result;
@@ -252,7 +250,7 @@ class FastMysqli extends Mysqli
      * @param string|null $index
      * @param string|array|null $where
      * @return array
-     * @throws \Exception
+     * @throws Error
      */
     public function fast_get_all_rows(string $table_name, string $index = null, $where = null): array
     {
@@ -273,7 +271,7 @@ class FastMysqli extends Mysqli
      * @param array|string $identify_data
      * @param array|string $adding_data
      * @return array|null
-     * @throws \Exception
+     * @throws Error
      */
     public function fast_get_row_or_create(string $table_name, $identify_data, $adding_data = []): array
     {
