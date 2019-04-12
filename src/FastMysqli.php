@@ -1,59 +1,70 @@
 <?php
 
+use \Exception;
+
 /**
  * Class FastMysqli
  * @author Maxim Kuvardin <kuvard.in@mail.ru>
  */
 class FastMysqli extends Mysqli
 {
+    public const NOT_NULL = 'IC&4j440*M&yl8X(H%41b%L)sA(ca0Z9&ab52YpX#16*1O%x';
+
     /**
-     * @var int $queries_counter Number of mysql-requests
+     * @var int
      */
     private $queries_counter = 0;
 
-    const NOT_NULL = 'это очень-очень длинная строка, которую нельзя повторить случайным образом';
-
     /**
-     * Update table rows
      * @param string $table
-     * @param string|array $row
-     * @param string|array|null $where
+     * @param array|string $row
+     * @param array|string|null $where
      * @param int|null $limit
-     * @return mysqli_result
+     * @return bool|mysqli_result
+     * @throws Exception
      */
     public function fast_update_row(string $table, $row, $where = null, int $limit = null)
     {
-        $query_string = "UPDATE `{$this->filter($table)}` SET {$this->fast_datalist_gen($row)}";
-        if (!is_null($where)) {
+        $query_string = 'UPDATE `' . $this->filter($table) . '` SET ' . $this->fast_datalist_gen($row);
+
+        if ($where !== null) {
             $query_string .= ' WHERE ' . $this->fast_where_gen($where);
         }
-        if (!is_null($limit)) {
-            $query_string .= ' LIMIT ' . intval($limit);
+
+        if ($limit !== null) {
+            $query_string .= ' LIMIT ' . $limit;
         }
+
         return $this->q($query_string);
     }
 
     /**
      * Deleting table rows
      * @param string $table
-     * @param null $where
+     * @param array|string|null $where
      * @param int|null $limit
      * @return bool|mysqli_result
      * @throws \Exception
      */
     public function fast_delete_row(string $table, $where = null, int $limit = null)
     {
-        $query_string = "DELETE FROM `" . $this->filter($table) . "` WHERE " . $this->fast_where_gen($where);
-        if (!is_null($limit)) {
-            $query_string .= " LIMIT " . intval($limit);
+        $query_string = 'DELETE FROM `' . $this->filter($table) . '`';
+
+        if ($where !== null) {
+            $query_string .= ' WHERE ' . $this->fast_where_gen($where);
         }
+
+        if ($limit !== null) {
+            $query_string .= ' LIMIT ' . $limit;
+        }
+
         return $this->q($query_string);
     }
 
     /**
      * Select table rows
      * @param string $table
-     * @param null $where
+     * @param array|string|null $where
      * @param int|null $limit
      * @param string|null $ord
      * @param string|null $sort
@@ -63,107 +74,164 @@ class FastMysqli extends Mysqli
      */
     public function fast_select_row(string $table, $where = null, int $limit = null, string $ord = null, string $sort = null, int $offset = null)
     {
-        $query_string = "SELECT * FROM `" . $this->filter($table) . "`";
-        if (!is_null($where) && !empty($where)) {
-            $query_string .= " WHERE " . $this->fast_where_gen($where);
+        $query_string = 'SELECT * FROM `' . $this->filter($table) . '`';
+
+        if ($where !== null) {
+            $query_string .= ' WHERE ' . $this->fast_where_gen($where);
         }
 
-        if (!is_null($ord)) {
-            $query_string .= " ORDER BY `{$ord}` " . (!is_null($sort) ? $sort : 'ASC');
+        if ($ord !== null) {
+            $query_string .= ' ORDER BY `' . $ord . '` ' . ($sort ?? 'ASC');
         }
 
-        if (!is_null($limit)) {
-            $query_string .= " LIMIT " . (!is_null($offset) ? $offset . ',' . $limit : $limit);
+        if ($limit !== null && $offset !== null) {
+            $query_string .= ' LIMIT ' . $offset . ', ' . $limit;
+        } elseif ($limit !== null) {
+            $query_string .= ' LIMIT ' . $limit;
         }
 
         return $this->q($query_string);
     }
 
-    public function fast_count_row(string $table, $where = null)
+    /**
+     * @param string $table
+     * @param array|string|null $where
+     * @return int
+     * @throws Exception
+     */
+    public function fast_count_row(string $table, $where = null): int
     {
-        $query_string = "SELECT COUNT(*) FROM `" . $this->filter($table) . "`";
-        if (!is_null($where) && !empty($where)) {
-            $query_string .= " WHERE " . $this->fast_where_gen($where);
+        $query_string = 'SELECT COUNT(*) FROM `' . $this->filter($table) . '`';
+
+        if ($where !== null) {
+            $query_string .= ' WHERE ' . $this->fast_where_gen($where);
         }
-        $result = intval($this->q($query_string)->fetch_array()[0]);
-        return $result;
+
+        return (int)$this->q($query_string)->fetch_array()[0];
     }
 
+
+    /**
+     * @param string $table
+     * @param array|string $row
+     * @return bool|mysqli_result
+     * @throws Exception
+     */
     public function fast_add_row(string $table, $row)
     {
-        return $this->q("INSERT INTO `" . $this->filter($table) . "` SET " . $this->fast_datalist_gen($row));
+        $query_string = 'INSERT INTO `' . $this->filter($table) . '` SET ' . $this->fast_datalist_gen($row);
+        return $this->q($query_string);
     }
 
-    public function fast_check_row(string $table, array $where)
+    /**
+     * @param string $table
+     * @param array|string $where
+     * @return bool
+     * @throws Exception
+     */
+    public function fast_check_row(string $table, $where): bool
     {
-        $result = (bool)$this->q("SELECT COUNT(*) FROM `" . $this->filter($table) . "` WHERE " . $this->fast_where_gen($where) . " LIMIT 1")->fetch_array()[0];
-        return $result;
+        $query_string = 'SELECT COUNT(*) FROM `' . $this->filter($table) . '` WHERE ' . $this->fast_where_gen($where) . ' LIMIT 1';
+        return (bool)$this->q($query_string)->fetch_array()[0];
     }
 
-    public function fast_where_gen($data, string $operation = 'AND')
+    /**
+     * @param $data
+     * @param string $operation
+     * @return string
+     * @throws \Exception
+     */
+    public function fast_where_gen($data, string $operation = 'AND'): string
     {
         if (is_string($data)) {
             return $data;
-        } elseif (!is_array($data)) {
-            throw new \Exception("Data array musb be array or string, given " . gettype($data));
         }
 
-        $result = '';
-        $s = 0;
-        $data_length = count($data);
-
-        $index = 0;
-        foreach ($data as $where_key => $where_value) {
-            if ($where_key === $index) {
-                $result .= $where_value . ' ';
-                $index++;
+        if (is_array($data)) {
+            $result = '';
+            $data_length = count($data);
+            if ($data_length === 0) {
+                $result .= '1';
             } else {
-                $result .= '`' . $this->filter($where_key) . '` ';
-                if (is_null($where_value)) {
-                    $result .= 'IS NULL ';
-                } elseif ($where_value === self::NOT_NULL) {
-                    $result .= 'IS NOT NULL ';
+                $s = $index = 0;
+                foreach ($data as $where_key => $where_value) {
+                    if ($where_key === $index) {
+                        $result .= $where_value . ' ';
+                        $index++;
+                    } else {
+                        $result .= "`{$this->filter($where_key)}` ";
+                        if ($where_value === null) {
+                            $result .= 'IS NULL ';
+                        } elseif ($where_value === self::NOT_NULL) {
+                            $result .= 'IS NOT NULL ';
+                        } else {
+                            $result .= "= '{$this->filter($where_value)}' ";
+                        }
+                    }
+
+                    if (++$s < $data_length) {
+                        $result .= $operation;
+                    }
+                }
+            }
+            return $result;
+        }
+
+        $data_type = gettype($data);
+        throw new Exception("Data must be array or string, {$data_type} given");
+    }
+
+    /**
+     * @param array|string $data
+     * @return string
+     * @throws \Exception
+     */
+    private function fast_datalist_gen($data): string
+    {
+        if (is_string($data)) {
+            return $data;
+        }
+
+        if (is_array($data)) {
+            $result = '';
+            $index = 0;
+
+            foreach ($data as $key => $value) {
+                if ($key === $index) {
+                    $result .= ' ' . $value . ',';
+                    $index++;
                 } else {
-                    $result .= "= '" . $this->filter($where_value) . "' ";
+                    $result .= ' `' . $this->filter($key) . '` = ' . ($value === null ? 'NULL' : '\'' . $this->filter($value) . '\'') . ',';
                 }
             }
 
-            if (++$s < $data_length) {
-                $result .= $operation;
-            }
+            $result = rtrim($result, ',');
+            return $result;
         }
 
-        return $result;
+        $data_type = gettype($data);
+        throw new Exception("Data must be array or string, {$data_type} given");
     }
 
-    private function fast_datalist_gen($data)
+    /**
+     * @param string $text
+     * @return string
+     */
+    public function filter(string $text): string
     {
-        if (is_string($data)) {
-            return $data;
-        }
-
-        $datalist = '';
-        foreach ($data as $key => $value) {
-            if (is_null($value)) {
-                $datalist .= " `" . $this->filter($key) . "` = NULL,";
-            } else {
-                $datalist .= " `" . $this->filter($key) . "` = '" . $this->filter($value) . "',";
-            }
-
-        }
-        $datalist = trim($datalist, ',');
-        return $datalist;
+        return $this->real_escape_string($text);
     }
 
-    public function filter(string $text)
-    {
-        return $this->real_escape_string(strval($text));
-    }
-
+    /**
+     * @param string $query_text
+     * @return bool|mysqli_result
+     * @throws \Exception
+     */
     public function q(string $query_text)
     {
         $this->queries_counter++;
         $result = $this->query($query_text);
+
         if ($result === false) {
             throw new Exception("Mysql error \"{$this->error}\" in query \"{$query_text}\"");
         }
@@ -171,40 +239,43 @@ class FastMysqli extends Mysqli
         return $result;
     }
 
-    public function get_queries_counter()
+    /**
+     * @return int
+     */
+    public function fast_queries_counter(): int
     {
         return $this->queries_counter;
     }
 
-    public function get_all_rows(string $table_name, string $index = null, $where = null)
+    /**
+     * @param string $table_name
+     * @param string|null $index
+     * @param string|array|null $where
+     * @return array
+     * @throws \Exception
+     */
+    public function fast_get_all_rows(string $table_name, string $index = null, $where = null): array
     {
         $result = [];
         $rows = $this->fast_select_row($table_name, $where);
         while ($row = $rows->fetch_assoc()) {
-            if (!empty($index)) {
-                $result[$row[$index]] = $row;
-            } else {
+            if ($index === null) {
                 $result[] = $row;
+            } else {
+                $result[$row[$index]] = $row;
             }
         }
         return $result;
     }
 
-    public function fast_get_all_rows(string $table_name, string $index = null, $where = null)
-    {
-        $result = [];
-        $rows = $this->fast_select_row($table_name, $where);
-        while ($row = $rows->fetch_assoc()) {
-            if (!empty($index)) {
-                $result[$row[$index]] = $row;
-            } else {
-                $result[] = $row;
-            }
-        }
-        return $result;
-    }
-
-    public function fast_get_row_or_create(string $table_name, $identify_data, array $adding_data = [])
+    /**
+     * @param string $table_name
+     * @param array|string $identify_data
+     * @param array|string $adding_data
+     * @return array|null
+     * @throws \Exception
+     */
+    public function fast_get_row_or_create(string $table_name, $identify_data, $adding_data = []): array
     {
         while (!$row = $this->fast_select_row($table_name, $identify_data, 1)->fetch_assoc()) {
             $row_data = is_array($identify_data) ? array_merge($adding_data, $identify_data) : $adding_data;
