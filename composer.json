@@ -3,7 +3,8 @@
   "description": "Simple PHP class for working with MySQL",
   "version": "1.0.0",
   "require": {
-    "php": ">=7.0"
+    "php": ">=7.0",
+    "ext-mysqli": "*"
   },
   "authors": [
     {
