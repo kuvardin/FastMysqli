@@ -82,10 +82,12 @@ class FastMysqli extends Mysqli
             $query_string .= ' ORDER BY `' . $ord . '` ' . ($sort ?? 'ASC');
         }
 
-        if ($limit !== null && $offset !== null) {
-            $query_string .= ' LIMIT ' . $offset . ', ' . $limit;
-        } elseif ($limit !== null) {
+        if ($limit !== null) {
             $query_string .= ' LIMIT ' . $limit;
+        }
+
+        if ($offset !== null && (int)$offset !== 0) {
+            $query_string .= ' OFFSET ' . $offset;
         }
 
         return $this->q($query_string);
@@ -108,7 +110,6 @@ class FastMysqli extends Mysqli
         $response = $this->q($query_string);
         return $response === false ? 0 : (int)$response->fetch_array()[0];
     }
-
 
     /**
      * @param string $table
