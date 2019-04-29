@@ -86,7 +86,7 @@ class FastMysqli extends Mysqli
             $query_string .= ' LIMIT ' . $limit;
         }
 
-        if ($offset !== null && (int)$offset !== 0) {
+        if ($offset !== null && ((int)$offset) !== 0) {
             $query_string .= ' OFFSET ' . $offset;
         }
 
