@@ -269,6 +269,44 @@ class FastMysqli extends Mysqli
     }
 
     /**
+     * @param string $query
+     * @param bool $search_all_words
+     * @param string ...$columns
+     * @return string|null
+     */
+    public function fast_gen_search_exp(string $query, bool $search_all_words, string...$columns): ?string
+    {
+        $words = explode(' ', $query);
+        $words_count = count($words);
+        if ($words_count === 0) {
+            return null;
+        }
+
+        $i = 0;
+        $operator = $search_all_words ? 'AND' : 'OR';
+        $columns_count = count($columns);
+        $result = '(';
+        foreach ($words as $word) {
+            $j = 0;
+            $word = $this->filter($word);
+            $result .= '(';
+            foreach ($columns as $column) {
+                $result .= '`' . $column . '` LIKE \'%' . $word . '%\'';
+                if (++$j !== $columns_count) {
+                    $result .= ' OR ';
+                }
+            }
+            $result .= ')';
+            if (++$i !== $words_count) {
+                $result .= ' ' . $operator . ' ';
+            }
+        }
+
+        $result .= ')';
+        return $result;
+    }
+
+    /**
      * @param string $table_name
      * @param array|string $identify_data
      * @param array|string $adding_data
