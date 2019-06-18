@@ -274,8 +274,9 @@ class FastMysqli extends Mysqli
      * @param string ...$columns
      * @return string|null
      */
-    public function fast_gen_search_exp(string $query, bool $search_all_words, string...$columns): ?string
+    public function fast_search_exp_gen(string $query, bool $search_all_words, string...$columns): ?string
     {
+        $query = preg_replace('/([\s\n\t ]+)/', ' ', $query);
         $words = explode(' ', $query);
         $words_count = count($words);
         if ($words_count === 0) {
