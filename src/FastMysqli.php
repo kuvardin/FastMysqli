@@ -30,7 +30,7 @@ class FastMysqli extends Mysqli
         $query_string = 'UPDATE `' . $this->filter($table) . '` SET ' . $this->fast_datalist_gen($row);
 
         if ($where !== null) {
-            $query_string .= ' WHERE ' . $this->fast_where_gen($where);
+            $query_string .= ' WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where));
         }
 
         if ($limit !== null) {
@@ -54,7 +54,7 @@ class FastMysqli extends Mysqli
         $query_string = 'DELETE FROM `' . $this->filter($table) . '`';
 
         if ($where !== null) {
-            $query_string .= ' WHERE ' . $this->fast_where_gen($where);
+            $query_string .= ' WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where));
         }
 
         if ($limit !== null) {
@@ -81,7 +81,7 @@ class FastMysqli extends Mysqli
         $query_string = 'SELECT * FROM `' . $this->filter($table) . '`';
 
         if ($where !== null) {
-            $query_string .= ' WHERE ' . $this->fast_where_gen($where);
+            $query_string .= ' WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where));
         }
 
         if ($ord !== null) {
@@ -110,7 +110,7 @@ class FastMysqli extends Mysqli
         $query_string = 'SELECT COUNT(*) FROM `' . $this->filter($table) . '`';
 
         if ($where !== null) {
-            $query_string .= ' WHERE ' . $this->fast_where_gen($where);
+            $query_string .= ' WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where));
         }
 
         $response = $this->q($query_string);
@@ -137,55 +137,56 @@ class FastMysqli extends Mysqli
      */
     public function fast_check(string $table, $where): bool
     {
-        $query_string = 'SELECT COUNT(*) FROM `' . $this->filter($table) . '` WHERE ' . $this->fast_where_gen($where) . ' LIMIT 1';
+        $query_string = 'SELECT COUNT(*) FROM `' . $this->filter($table) . '` WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where)) . ' LIMIT 1';
         return (bool)$this->q($query_string)->fetch_array()[0];
     }
 
     /**
-     * @param string|array $data
+     * @param array $data
      * @param string $operation
      * @return string
-     * @throws Error
      */
-    public function fast_where_gen($data, string $operation = 'AND'): string
+    public function fast_where_gen(array $data, string $operation = self::BOOL_OPERATION_AND): string
     {
-        if (is_string($data)) {
-            return $data;
+        if (!self::checkBoolOperation($operation)) {
+            throw new Error("Unknown bool operation: $operation");
         }
 
-        if (is_array($data)) {
-            $data_length = count($data);
-            if ($data_length === 0) {
-                return '1';
-            }
+        if (!isset($data[0])) {
+            return '1';
+        }
 
-            $result = '';
-            $s = $index = 0;
-            foreach ($data as $where_key => $where_value) {
-                if ($where_key === $index) {
-                    $result .= $where_value . ' ';
-                    $index++;
+        $result = '';
+        $s = $index = 0;
+        $data_length = count($data);
+        foreach ($data as $where_key => $where_value) {
+            if ($where_key === $index) {
+                $result .= $where_value;
+                $index++;
+            } else {
+                $result .= "`{$this->filter($where_key)}` ";
+                if ($where_value === null) {
+                    $result .= 'IS NULL';
+                } elseif (is_nan($where_value)) {
+                    $result .= 'IS NOT NULL';
                 } else {
-                    $result .= "`{$this->filter($where_key)}` ";
-                    if ($where_value === null) {
-                        $result .= 'IS NULL ';
-                    } elseif (is_nan($where_value)) {
-                        $result .= 'IS NOT NULL ';
+                    $result .= '= ';
+                    if (is_bool($where_value)) {
+                        $result .= $where_value ? '1' : '0';
+                    } elseif (is_string($where_value) && strpos($where_value, '(') === 0) {
+                        $result .= $this->filter($where_value);
                     } else {
-                        $result .= "= '{$this->filter($where_value)}' ";
+                        $result .= '\'' . $this->filter($where_value) . '\'';
                     }
                 }
-
-                if (++$s < $data_length) {
-                    $result .= $operation;
-                }
             }
 
-            return $result;
+            if (++$s < $data_length) {
+                $result .= ' ' . $operation . ' ';
+            }
         }
 
-        $data_type = gettype($data);
-        throw new Error("Data must be array or string, {$data_type} given");
+        return $result;
     }
 
     /**
