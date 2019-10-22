@@ -2,11 +2,15 @@
 
 /**
  * Class FastMysqli
- * @author Maxim Kuvardin <kuvard.in@mail.ru>
+ *
+ * @author Maxim Kuvardin <maxim@kuvard.in>
  */
 class FastMysqli extends Mysqli
 {
-    public const NOT_NULL = 'IC&4j440Ï*M&yl8аÑX(H%41b%L)sA(ca0Z9&ab52YpX#16*1O%x';
+    public const NOT_NULL = NAN;
+
+    public const BOOL_OPERATION_AND = 'AND';
+    public const BOOL_OPERATION_OR = 'OR';
 
     /**
      * @var int
@@ -18,10 +22,10 @@ class FastMysqli extends Mysqli
      * @param array|string $row
      * @param array|string|null $where
      * @param int|null $limit
-     * @return bool|mysqli_result
+     * @return bool
      * @throws Error
      */
-    public function fast_update(string $table, $row, $where = null, int $limit = null)
+    public function fast_update(string $table, $row, $where = null, int $limit = null): bool
     {
         $query_string = 'UPDATE `' . $this->filter($table) . '` SET ' . $this->fast_datalist_gen($row);
 
@@ -38,13 +42,14 @@ class FastMysqli extends Mysqli
 
     /**
      * Deleting table rows
+     *
      * @param string $table
      * @param array|string|null $where
      * @param int|null $limit
-     * @return bool|mysqli_result
+     * @return bool
      * @throws Error
      */
-    public function fast_delete(string $table, $where = null, int $limit = null)
+    public function fast_delete(string $table, $where = null, int $limit = null): bool
     {
         $query_string = 'DELETE FROM `' . $this->filter($table) . '`';
 
@@ -61,16 +66,17 @@ class FastMysqli extends Mysqli
 
     /**
      * Select table rows
+     *
      * @param string $table
      * @param array|string|null $where
      * @param int|null $limit
      * @param string|null $ord
      * @param string|null $sort
      * @param int|null $offset
-     * @return bool|mysqli_result
+     * @return mysqli_result
      * @throws Error
      */
-    public function fast_select(string $table, $where = null, int $limit = null, string $ord = null, string $sort = null, int $offset = null)
+    public function fast_select(string $table, $where = null, int $limit = null, string $ord = null, string $sort = null, int $offset = null): mysqli_result
     {
         $query_string = 'SELECT * FROM `' . $this->filter($table) . '`';
 
@@ -117,7 +123,7 @@ class FastMysqli extends Mysqli
      * @return bool|mysqli_result
      * @throws Error
      */
-    public function fast_add(string $table, $row)
+    public function fast_add(string $table, $row): bool
     {
         $query_string = 'INSERT INTO `' . $this->filter($table) . '` SET ' . $this->fast_datalist_gen($row);
         return $this->q($query_string);
@@ -136,7 +142,7 @@ class FastMysqli extends Mysqli
     }
 
     /**
-     * @param $data
+     * @param string|array $data
      * @param string $operation
      * @return string
      * @throws Error
@@ -148,32 +154,33 @@ class FastMysqli extends Mysqli
         }
 
         if (is_array($data)) {
-            $result = '';
             $data_length = count($data);
             if ($data_length === 0) {
-                $result .= '1';
-            } else {
-                $s = $index = 0;
-                foreach ($data as $where_key => $where_value) {
-                    if ($where_key === $index) {
-                        $result .= $where_value . ' ';
-                        $index++;
-                    } else {
-                        $result .= "`{$this->filter($where_key)}` ";
-                        if ($where_value === null) {
-                            $result .= 'IS NULL ';
-                        } elseif ($where_value === self::NOT_NULL) {
-                            $result .= 'IS NOT NULL ';
-                        } else {
-                            $result .= "= '{$this->filter($where_value)}' ";
-                        }
-                    }
+                return '1';
+            }
 
-                    if (++$s < $data_length) {
-                        $result .= $operation;
+            $result = '';
+            $s = $index = 0;
+            foreach ($data as $where_key => $where_value) {
+                if ($where_key === $index) {
+                    $result .= $where_value . ' ';
+                    $index++;
+                } else {
+                    $result .= "`{$this->filter($where_key)}` ";
+                    if ($where_value === null) {
+                        $result .= 'IS NULL ';
+                    } elseif (is_nan($where_value)) {
+                        $result .= 'IS NOT NULL ';
+                    } else {
+                        $result .= "= '{$this->filter($where_value)}' ";
                     }
                 }
+
+                if (++$s < $data_length) {
+                    $result .= $operation;
+                }
             }
+
             return $result;
         }
 
@@ -201,7 +208,19 @@ class FastMysqli extends Mysqli
                     $result .= ' ' . $value . ',';
                     $index++;
                 } else {
-                    $result .= ' `' . $this->filter($key) . '` = ' . ($value === null ? 'NULL' : '\'' . $this->filter($value) . '\'') . ',';
+                    if ($value === null) {
+                        $value = 'NULL';
+                    } elseif (is_bool($value)) {
+                        $value = $value ? '1' : '0';
+                    } elseif ($value === 0) {
+                        $value = '0';
+                    } elseif (is_numeric($value)) {
+                        // nothing
+                    } else {
+                        $value = '\'' . $this->filter($value) . '\'';
+                    }
+
+                    $result .= ' `' . $this->filter($key) . '` = ' . $value . ',';
                 }
             }
 
@@ -274,7 +293,7 @@ class FastMysqli extends Mysqli
      * @param string ...$columns
      * @return string|null
      */
-    public function fast_search_exp_gen(string $query, bool $search_all_words, string...$columns): ?string
+    public function fast_search_exp_gen(string $query, bool $search_all_words, string ...$columns): ?string
     {
         $query = preg_replace('/([\s\n\t ]+)/', ' ', $query);
         $words = explode(' ', $query);
@@ -314,12 +333,22 @@ class FastMysqli extends Mysqli
      * @return array|null
      * @throws Error
      */
-    public function fast_get_row_or_create(string $table_name, $identify_data, $adding_data = []): array
+    public function fast_get_or_create(string $table_name, $identify_data, $adding_data = []): array
     {
         while (!$row = $this->fast_select($table_name, $identify_data, 1)->fetch_assoc()) {
             $row_data = is_array($identify_data) ? array_merge($adding_data, $identify_data) : $adding_data;
             $this->fast_add($table_name, $row_data);
         }
         return $row;
+    }
+
+    /**
+     * @param string $bool_operation
+     * @return bool
+     */
+    private static function checkBoolOperation(string $bool_operation): bool
+    {
+        return $bool_operation === self::BOOL_OPERATION_AND ||
+            $bool_operation === self::BOOL_OPERATION_OR;
     }
 }
