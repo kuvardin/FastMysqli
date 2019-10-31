@@ -270,7 +270,7 @@ class FastMysqli extends Mysqli
 
         if ($this->log_file_path !== null) {
             $log_file = fopen($this->log_file_path, 'w');
-            fwrite($log_file, "\n" . DateTime::format('[Y.m.d H:i:s:u] ') . $query);
+            fwrite($log_file, "\n" . date('[Y.m.d H:i:s] ') . $query);
             fclose($log_file);
         }
 
