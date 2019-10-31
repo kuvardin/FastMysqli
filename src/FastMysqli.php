@@ -237,7 +237,7 @@ class FastMysqli extends Mysqli
                     $value = $value ? '1' : '0';
                 } elseif ($value === 0) {
                     $value = '0';
-                } elseif (!is_numeric($value)) {
+                } else {
                     $value = '\'' . $this->filter($value) . '\'';
                 }
 
