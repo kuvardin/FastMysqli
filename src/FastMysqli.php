@@ -18,6 +18,30 @@ class FastMysqli extends Mysqli
     private $queries_counter = 0;
 
     /**
+     * @var string|null
+     */
+    private $log_file_path;
+
+    /**
+     * @param string $log_file_path
+     * @return $this
+     */
+    public function enable_logging(string $log_file_path): self
+    {
+        $this->log_file_path = $log_file_path;
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function disable_logging(): self
+    {
+        $this->log_file_path = null;
+        return $this;
+    }
+
+    /**
      * @param string $table
      * @param array|string $row
      * @param array|string|null $where
@@ -27,7 +51,8 @@ class FastMysqli extends Mysqli
      */
     public function fast_update(string $table, $row, $where = null, int $limit = null): bool
     {
-        $query_string = 'UPDATE `' . $this->filter($table) . '` SET ' . $this->fast_datalist_gen($row);
+        $query_string = 'UPDATE `' . $this->filter($table) . '`' .
+            'SET ' . (is_string($row) ? $this->filter($row) : $this->fast_datalist_gen($row));
 
         if ($where !== null) {
             $query_string .= ' WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where));
@@ -125,7 +150,8 @@ class FastMysqli extends Mysqli
      */
     public function fast_add(string $table, $row): bool
     {
-        $query_string = 'INSERT INTO `' . $this->filter($table) . '` SET ' . $this->fast_datalist_gen($row);
+        $query_string = 'INSERT INTO `' . $this->filter($table) . '`' .
+            ' SET ' . (is_string($row) ? $this->filter($row) : $this->fast_datalist_gen($row));
         return $this->q($query_string);
     }
 
@@ -137,7 +163,9 @@ class FastMysqli extends Mysqli
      */
     public function fast_check(string $table, $where): bool
     {
-        $query_string = 'SELECT COUNT(*) FROM `' . $this->filter($table) . '` WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where)) . ' LIMIT 1';
+        $query_string = 'SELECT COUNT(*) FROM `' . $this->filter($table) . '`' .
+            ' WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where)) .
+            ' LIMIT 1';
         return (bool)$this->q($query_string)->fetch_array()[0];
     }
 
@@ -194,43 +222,32 @@ class FastMysqli extends Mysqli
      * @return string
      * @throws Error
      */
-    private function fast_datalist_gen($data): string
+    private function fast_datalist_gen(array $data): string
     {
-        if (is_string($data)) {
-            return $data;
-        }
-
-        if (is_array($data)) {
-            $result = '';
-            $index = 0;
-
-            foreach ($data as $key => $value) {
-                if ($key === $index) {
-                    $result .= ' ' . $value . ',';
-                    $index++;
-                } else {
-                    if ($value === null) {
-                        $value = 'NULL';
-                    } elseif (is_bool($value)) {
-                        $value = $value ? '1' : '0';
-                    } elseif ($value === 0) {
-                        $value = '0';
-                    } elseif (is_numeric($value)) {
-                        // nothing
-                    } else {
-                        $value = '\'' . $this->filter($value) . '\'';
-                    }
-
-                    $result .= ' `' . $this->filter($key) . '` = ' . $value . ',';
+        $index = 0;
+        $result = '';
+        foreach ($data as $key => $value) {
+            if ($key === $index) {
+                $result .= ' ' . $value . ',';
+                $index++;
+            } else {
+                if ($value === null) {
+                    $value = 'NULL';
+                } elseif (is_bool($value)) {
+                    $value = $value ? '1' : '0';
+                } elseif ($value === 0) {
+                    $value = '0';
+                } elseif (!is_numeric($value)) {
+                    $value = '\'' . $this->filter($value) . '\'';
                 }
-            }
 
-            $result = rtrim($result, ',');
-            return $result;
+                $result .= ' `' . $this->filter($key) . '` = ' . $value . ',';
+            }
         }
 
-        $data_type = gettype($data);
-        throw new Error("Data must be array or string, {$data_type} given");
+        $result = rtrim($result, ',');
+        return $result;
+
     }
 
     /**
@@ -250,11 +267,19 @@ class FastMysqli extends Mysqli
     public function q(string $query, int $resultmode = MYSQLI_STORE_RESULT)
     {
         $this->queries_counter++;
+
+        if ($this->log_file_path !== null) {
+            $log_file = fopen($this->log_file_path, 'w');
+            fwrite($log_file, "\n" . DateTime::format('[Y.m.d H:i:s:u] ') . $query);
+            fclose($log_file);
+        }
+
         $result = $this->query($query, $resultmode);
 
         if ($result === false) {
             throw new Error("Mysql error \"{$this->error}\" in query \"{$query}\"");
         }
+
 
         return $result;
     }
