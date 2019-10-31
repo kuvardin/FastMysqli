@@ -180,7 +180,7 @@ class FastMysqli extends Mysqli
             throw new Error("Unknown bool operation: $operation");
         }
 
-        if (!isset($data[0])) {
+        if (empty($data)) {
             return '1';
         }
 
