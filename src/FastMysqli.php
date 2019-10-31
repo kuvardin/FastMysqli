@@ -269,7 +269,7 @@ class FastMysqli extends Mysqli
         $this->queries_counter++;
 
         if ($this->log_file_path !== null) {
-            $log_file = fopen($this->log_file_path, 'w');
+            $log_file = fopen($this->log_file_path, 'a');
             fwrite($log_file, "\n" . date('[Y.m.d H:i:s] ') . $query);
             fclose($log_file);
         }
