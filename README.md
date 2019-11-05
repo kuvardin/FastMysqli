@@ -22,6 +22,12 @@ $filtered_name = $mysqli->filter($_GET['name']);
 $user = $mysqli->q("SELECT * FROM `users` WHERE `name` = '$filtered_name' LIMIT 1");
 ```
 
+### Simple select
+```
+// SELECT * FROM `users` WHERE `name` = '{$mysqli->filter($_GET['name'])}' LIMIT 1
+$user = $mysqli->fast_select('users', ['name' => $_GET['name']], 1);
+```
+
 ### Adding the new row
 ```
 // INSERT INTO `users` SET `name` = 'Maxim', `surname` = 'Kuvardin'
