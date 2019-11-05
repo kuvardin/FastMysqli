@@ -28,7 +28,7 @@ $user = $mysqli->q("SELECT * FROM `users` WHERE `name` = '$filtered_name' LIMIT 
 $user = $mysqli->fast_select('users', ['name' => $_GET['name']], 1);
 ```
 
-### Adding the new row
+### Adding a new row
 ```
 // INSERT INTO `users` SET `name` = 'Maxim', `surname` = 'Kuvardin'
 $mysqli->fast_add_row('users', [
