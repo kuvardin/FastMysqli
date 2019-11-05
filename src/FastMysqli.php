@@ -7,7 +7,7 @@
  */
 class FastMysqli extends Mysqli
 {
-    public const NOT_NULL = NAN;
+    public const NOT_NULL = PHP_BINARY . PHP_VERSION . PHP_LIBDIR . PHP_EXTENSION_DIR . PHP_OS;
 
     public const BOOL_OPERATION_AND = 'AND';
     public const BOOL_OPERATION_OR = 'OR';
@@ -176,7 +176,7 @@ class FastMysqli extends Mysqli
      */
     private function fast_where_gen(array $data, string $operation = self::BOOL_OPERATION_AND): string
     {
-        if (!self::checkBoolOperation($operation)) {
+        if ($operation !== self::BOOL_OPERATION_AND && $operation !== self::BOOL_OPERATION_OR) {
             throw new Error("Unknown bool operation: $operation");
         }
 
@@ -195,14 +195,12 @@ class FastMysqli extends Mysqli
                 $result .= "`{$this->filter($where_key)}` ";
                 if ($where_value === null) {
                     $result .= 'IS NULL';
-                } elseif (is_nan($where_value)) {
+                } elseif ($where_value === self::NOT_NULL) {
                     $result .= 'IS NOT NULL';
                 } else {
                     $result .= '= ';
                     if (is_bool($where_value)) {
                         $result .= $where_value ? '1' : '0';
-                    } elseif (is_string($where_value) && strpos($where_value, '(') === 0) {
-                        $result .= $this->filter($where_value);
                     } else {
                         $result .= '\'' . $this->filter($where_value) . '\'';
                     }
@@ -366,15 +364,5 @@ class FastMysqli extends Mysqli
             $this->fast_add($table_name, $row_data);
         }
         return $row;
-    }
-
-    /**
-     * @param string $bool_operation
-     * @return bool
-     */
-    private static function checkBoolOperation(string $bool_operation): bool
-    {
-        return $bool_operation === self::BOOL_OPERATION_AND ||
-            $bool_operation === self::BOOL_OPERATION_OR;
     }
 }
