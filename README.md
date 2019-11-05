@@ -2,6 +2,11 @@
 
 Simple PHP class for working with MySQL
 
+## Installing
+```
+composer require "kuvardin/fast-mysqli: dev-master"
+```
+
 ## Using example
 ### Class init
 ```
