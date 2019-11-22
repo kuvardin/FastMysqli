@@ -174,7 +174,7 @@ class FastMysqli extends Mysqli
      * @param string $operation
      * @return string
      */
-    private function fast_where_gen(array $data, string $operation = self::BOOL_OPERATION_AND): string
+    public function fast_where_gen(array $data, string $operation = self::BOOL_OPERATION_AND): string
     {
         if ($operation !== self::BOOL_OPERATION_AND && $operation !== self::BOOL_OPERATION_OR) {
             throw new Error("Unknown bool operation: $operation");
