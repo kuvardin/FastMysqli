@@ -8,7 +8,6 @@ composer require "kuvardin/fast-mysqli: dev-master"
 ```
 
 ## Using example
-### Class init
 ```php
 <?php
 
