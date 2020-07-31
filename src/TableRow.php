@@ -25,7 +25,7 @@ abstract class TableRow
     /**
      * @var self[][]
      */
-    protected static array $cache = [];
+    private static array $cache = [];
 
     /**
      * @var int
@@ -49,8 +49,8 @@ abstract class TableRow
      */
     public function __construct(array $data)
     {
-        $this->id = (int)$data['id'];
-        $this->creation_date = (int)$data['creation_date'];
+        $this->id = $data['id'];
+        $this->creation_date = $data['creation_date'];
     }
 
     /**
@@ -59,6 +59,7 @@ abstract class TableRow
     final public static function setMysqli(Mysqli $mysqli): void
     {
         self::$mysqli = $mysqli;
+        $mysqli->set_opt(MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
     }
 
     /**
@@ -247,10 +248,12 @@ abstract class TableRow
 
     /**
      * @param int $creation_date
+     * @return $this
      */
-    final public function setCreationDate(int $creation_date): void
+    final public function setCreationDate(int $creation_date): self
     {
         $this->setFieldValue('creation_date', $this->creation_date, $creation_date);
+        return $this;
     }
 
     /**
@@ -290,11 +293,16 @@ abstract class TableRow
         $this->save();
     }
 
-    public function save(): void
+    /**
+     * @return $this
+     * @throws MysqliError
+     */
+    public function save(): self
     {
         if (count($this->edited_fields)) {
             self::$mysqli->fast_update(static::getDatabaseTableName(), $this->edited_fields, ['id' => $this->id], 1);
             $this->edited_fields = [];
         }
+        return $this;
     }
 }
