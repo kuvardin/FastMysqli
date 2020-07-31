@@ -38,7 +38,7 @@ class Mysqli extends \Mysqli
     private ?string $log_file_path = null;
 
     /**
-     * FastMysqli constructor.
+     * Mysqli constructor.
      *
      * @param string|null $host
      * @param string|null $username
@@ -46,11 +46,15 @@ class Mysqli extends \Mysqli
      * @param string|null $dbname
      * @param null $port
      * @param null $socket
+     * @throws MysqliError
      */
     public function __construct(string $host = null, string $username = null, string $password = null,
         string $dbname = null, $port = null, $socket = null)
     {
         parent::__construct($host, $username, $password, $dbname, $port, $socket);
+        if ($this->connect_errno) {
+            throw new MysqliError($this->connect_errno, $this->sqlstate, $this->connect_error, null);
+        }
     }
 
     /**
@@ -234,7 +238,7 @@ class Mysqli extends \Mysqli
             $result = $this->query($query, $result_mode);
             $time = (microtime(true) - $start_time) * 1000;
             $date_time = (new DateTime())->format('Y.m.d H:i:s:u');
-            $log_text = "[$date_time|$time] " . str_replace("\n", '\\n', $query) . "s\n";
+            $log_text = "[$date_time|$time] " . str_replace(PHP_EOL, '\\n', $query) . PHP_EOL;
             $f = fopen($this->log_file_path, 'ab');
             fwrite($f, $log_text);
             fclose($f);
