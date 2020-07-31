@@ -225,17 +225,17 @@ class Mysqli extends \Mysqli
 
     /**
      * @param string $query
-     * @param int $result_mode
+     * @param int|null $result_mode
      * @return bool|mysqli_result
      * @throws MysqliError
      */
-    public function q(string $query, int $result_mode = MYSQLI_STORE_RESULT)
+    public function q(string $query, int $result_mode = null)
     {
         $this->queries_counter++;
 
         if ($this->log_file_path !== null) {
             $start_time = microtime(true);
-            $result = $this->query($query, $result_mode);
+            $result = $this->query($query, $result_mode ?? MYSQLI_STORE_RESULT);
             $time = (microtime(true) - $start_time) * 1000;
             $date_time = (new DateTime())->format('Y.m.d H:i:s:u');
             $log_text = "[$date_time|$time] " . str_replace(PHP_EOL, '\\n', $query) . PHP_EOL;
@@ -243,7 +243,7 @@ class Mysqli extends \Mysqli
             fwrite($f, $log_text);
             fclose($f);
         } else {
-            $result = $this->query($query, $result_mode);
+            $result = $this->query($query, $result_mode ?? MYSQLI_STORE_RESULT);
         }
 
         if (!empty($this->error_list)) {
@@ -266,7 +266,7 @@ class Mysqli extends \Mysqli
 
     /**
      * @param string $table
-     * @param null $where
+     * @param string|array|null $where
      * @param int|null $limit
      * @return bool
      * @throws MysqliError
@@ -288,7 +288,7 @@ class Mysqli extends \Mysqli
 
     /**
      * @param string $table
-     * @param null $where
+     * @param string|array|null $where
      * @return int
      * @throws MysqliError
      */
@@ -306,7 +306,7 @@ class Mysqli extends \Mysqli
 
     /**
      * @param string $table
-     * @param $where
+     * @param string|array $where
      * @return bool
      * @throws MysqliError
      */
@@ -392,7 +392,7 @@ class Mysqli extends \Mysqli
 
     /**
      * @param string $table
-     * @param null $where
+     * @param string|array|null $where
      * @param int|null $limit
      * @param string|null $ord
      * @param string|null $sort
@@ -427,7 +427,7 @@ class Mysqli extends \Mysqli
     /**
      * @param string $query
      * @param bool $search_all_words
-     * @param array $columns
+     * @param string[] $columns
      * @return string|null
      */
     public function fast_search_exp_gen(string $query, bool $search_all_words, array $columns): ?string
@@ -465,7 +465,7 @@ class Mysqli extends \Mysqli
 
     /**
      * @param string $table
-     * @param $row
+     * @param string|array $row
      * @return bool
      * @throws MysqliError
      */
