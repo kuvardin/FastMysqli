@@ -1,6 +1,6 @@
 # FastMysqli
 
-Simple PHP class for working with MySQL
+Simple PHP library for working with MySQL
 
 ## Installing
 ```shell script
