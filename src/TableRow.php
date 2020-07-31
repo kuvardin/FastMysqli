@@ -127,6 +127,59 @@ abstract class TableRow
     }
 
     /**
+     * @param SelectionData|null $selection_data
+     * @param array|null $filters
+     * @return Generator
+     * @throws MysqliError
+     */
+    final public static function getSelection(?SelectionData $selection_data, ?array $filters): Generator
+    {
+        $rows = $selection_data === null
+            ? self::$mysqli->fast_select(static::getDatabaseTableName(), $filters)
+            : self::$mysqli->fast_select(static::getDatabaseTableName(), $filters, $selection_data->getLimit(),
+                $selection_data->getOrd(), $selection_data->getSort(), $selection_data->getOffset());
+        if (!$rows->num_rows) {
+            return;
+        }
+
+        while ($row = $rows->fetch_assoc()) {
+            yield self::getFromCache(new static($row));
+        }
+    }
+
+    /**
+     * @param TableRow $object
+     * @return static
+     */
+    final protected static function getFromCache(self $object): self
+    {
+        if (empty(self::$cache[$object::getDatabaseTableName()][$object->getId()])) {
+            self::$cache[$object::getDatabaseTableName()][$object->getId()] = $object;
+        } else {
+            $object = self::$cache[$object::getDatabaseTableName()][$object->getId()];
+        }
+        return $object;
+    }
+
+    /**
+     * @return int
+     */
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    /**
+     * @param $filters
+     * @return int
+     * @throws MysqliError
+     */
+    final public static function count($filters): int
+    {
+        return self::$mysqli->fast_count(static::getDatabaseTableName(), $filters);
+    }
+
+    /**
      * @param int|null $id
      * @param array $data
      * @param int|null $creation_date
@@ -139,14 +192,6 @@ abstract class TableRow
         $data['creation_date'] = $creation_date ?? time();
         self::$mysqli->fast_add(static::getDatabaseTableName(), $data);
         return self::requireById($id ?? self::$mysqli->insert_id);
-    }
-
-    /**
-     * @return int
-     */
-    public function getId(): int
-    {
-        return $this->id;
     }
 
     /**
@@ -193,64 +238,11 @@ abstract class TableRow
     }
 
     /**
-     * @param SelectionData|null $selection_data
-     * @param array|null $filters
-     * @return Generator
-     * @throws MysqliError
-     */
-    final public static function getSelection(?SelectionData $selection_data, ?array $filters): Generator
-    {
-        $rows = $selection_data === null
-            ? self::$mysqli->fast_select(static::getDatabaseTableName(), $filters)
-            : self::$mysqli->fast_select(static::getDatabaseTableName(), $filters, $selection_data->getLimit(),
-                $selection_data->getOrd(), $selection_data->getSort(), $selection_data->getOffset());
-        if (!$rows->num_rows) {
-            return;
-        }
-
-        while ($row = $rows->fetch_assoc()) {
-            yield self::getFromCache(new static($row));
-        }
-    }
-
-    /**
-     * @param $filters
-     * @return int
-     * @throws MysqliError
-     */
-    final public static function count($filters): int
-    {
-        return self::$mysqli->fast_count(static::getDatabaseTableName(), $filters);
-    }
-
-    /**
-     * @param TableRow $object
-     * @return static
-     */
-    final protected static function getFromCache(self $object): self
-    {
-        if (empty(self::$cache[$object::getDatabaseTableName()][$object->getId()])) {
-            self::$cache[$object::getDatabaseTableName()][$object->getId()] = $object;
-        } else {
-            $object = self::$cache[$object::getDatabaseTableName()][$object->getId()];
-        }
-        return $object;
-    }
-
-    /**
      * @return int
      */
     final public function getCreationDate(): int
     {
         return $this->creation_date;
-    }
-
-    /**
-     * @return DateTime
-     */
-    final public function getCreationDateTime(): DateTime
-    {
-        return new DateTime("@{$this->creation_date}");
     }
 
     /**
@@ -280,6 +272,14 @@ abstract class TableRow
             $this->edited_fields[$field_name] = $new_value;
         }
         return $this;
+    }
+
+    /**
+     * @return DateTime
+     */
+    final public function getCreationDateTime(): DateTime
+    {
+        return new DateTime("@{$this->creation_date}");
     }
 
     /**

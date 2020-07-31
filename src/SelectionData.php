@@ -66,16 +66,6 @@ class SelectionData
     }
 
     /**
-     * @param string $sort
-     * @return bool
-     */
-    public static function checkSort(string $sort): bool
-    {
-        return $sort === self::SORT_ASC ||
-            $sort === self::SORT_DESC;
-    }
-
-    /**
      * @return int|null
      */
     public function getLimit(): ?int
@@ -162,5 +152,15 @@ class SelectionData
         }
         $this->sort = $sort;
         return $this;
+    }
+
+    /**
+     * @param string $sort
+     * @return bool
+     */
+    public static function checkSort(string $sort): bool
+    {
+        return $sort === self::SORT_ASC ||
+            $sort === self::SORT_DESC;
     }
 }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Kuvardin\FastMysqli;
 
+use DateTime;
+use Error;
 use Kuvardin\FastMysqli\Exceptions\MysqliError;
 use mysqli_result;
-use Error;
-use DateTime;
 
 /**
  * Class Mysqli
@@ -54,11 +54,16 @@ class Mysqli extends \Mysqli
     }
 
     /**
-     * @return NotNull
+     * @param bool|null $is_null
+     * @return IsNull|NotNull|null
      */
-    public static function notNull(): NotNull
+    public static function getNull(?bool $is_null)
     {
-        return self::$not_null ?? (self::$not_null = new NotNull());
+        if ($is_null === null) {
+            return null;
+        }
+
+        return $is_null ? self::isNull() : self::notNull();
     }
 
     /**
@@ -70,16 +75,11 @@ class Mysqli extends \Mysqli
     }
 
     /**
-     * @param bool|null $is_null
-     * @return IsNull|NotNull|null
+     * @return NotNull
      */
-    public static function getNull(?bool $is_null)
+    public static function notNull(): NotNull
     {
-        if ($is_null === null) {
-            return null;
-        }
-
-        return $is_null ? self::isNull() : self::notNull();
+        return self::$not_null ?? (self::$not_null = new NotNull());
     }
 
     /**
@@ -114,7 +114,7 @@ class Mysqli extends \Mysqli
      * @param array|string|null $where
      * @param int|null $limit
      * @return bool
-     * @throws Error
+     * @throws MysqliError
      */
     public function fast_update(string $table, $row, $where = null, int $limit = null): bool
     {
@@ -235,7 +235,7 @@ class Mysqli extends \Mysqli
             $time = (microtime(true) - $start_time) * 1000;
             $date_time = (new DateTime())->format('Y.m.d H:i:s:u');
             $log_text = "[$date_time|$time] " . str_replace("\n", '\\n', $query) . "s\n";
-            $f = fopen($this->log_file_path, 'a');
+            $f = fopen($this->log_file_path, 'ab');
             fwrite($f, $log_text);
             fclose($f);
         } else {
