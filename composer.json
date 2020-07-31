@@ -3,7 +3,7 @@
   "description": "Simple PHP class for working with MySQL",
   "version": "2.0.0",
   "require": {
-    "php": ">=7.0",
+    "php": ">=7.4",
     "ext-mysqli": "*"
   },
   "authors": [
@@ -13,9 +13,9 @@
     }
   ],
   "autoload": {
-    "classmap": [
-      "src"
-    ]
+    "psr-4": {
+      "Kuvardin\\FastMysqi\\": "src"
+    }
   },
   "minimum-stability": "dev"
 }
