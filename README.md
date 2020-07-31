@@ -22,7 +22,7 @@ $db = [
     'name' => 'testbase',
 ];
 
-// Connect to MySQLi
+// Connect to MySQL server
 $mysqli = new Mysqli($db['host'], $db['user'], $db['pass'], $db['name']);
 
 // Query
