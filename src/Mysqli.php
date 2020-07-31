@@ -63,13 +63,13 @@ class Mysqli extends \Mysqli
             return null;
         }
 
-        return $is_null ? self::isNull() : self::notNull();
+        return $is_null ? self::is_null() : self::not_null();
     }
 
     /**
      * @return IsNull
      */
-    public static function isNull(): IsNull
+    public static function is_null(): IsNull
     {
         return self::$is_null ?? (self::$is_null = new IsNull());
     }
@@ -77,7 +77,7 @@ class Mysqli extends \Mysqli
     /**
      * @return NotNull
      */
-    public static function notNull(): NotNull
+    public static function not_null(): NotNull
     {
         return self::$not_null ?? (self::$not_null = new NotNull());
     }
@@ -86,13 +86,13 @@ class Mysqli extends \Mysqli
      * @param bool|null $not_null
      * @return IsNull|NotNull|null
      */
-    public static function getNotNull(?bool $not_null)
+    public static function get_not_null(?bool $not_null)
     {
         if ($not_null === null) {
             return null;
         }
 
-        return $not_null ? self::notNull() : self::isNull();
+        return $not_null ? self::not_null() : self::is_null();
     }
 
     /**
