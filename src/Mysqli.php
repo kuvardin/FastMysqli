@@ -100,6 +100,27 @@ class Mysqli extends \Mysqli
     }
 
     /**
+     * @param int|null $int
+     * @return bool|null
+     */
+    public static function getBool(?int $int): ?bool
+    {
+        if ($int === null) {
+            return null;
+        }
+        return $int !== 0;
+    }
+
+    /**
+     * @param int $int
+     * @return bool
+     */
+    public static function requireBool(int $int): bool
+    {
+        return $int !== 0;
+    }
+
+    /**
      * @param string $log_file_path
      */
     public function enable_logging(string $log_file_path): void
