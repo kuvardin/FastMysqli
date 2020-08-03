@@ -59,7 +59,6 @@ abstract class TableRow
     final public static function setMysqli(Mysqli $mysqli): void
     {
         self::$mysqli = $mysqli;
-        $mysqli->set_opt(MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
     }
 
     /**
