@@ -61,7 +61,7 @@ class Mysqli extends \Mysqli
      * @param bool|null $is_null
      * @return IsNull|NotNull|null
      */
-    public static function getNull(?bool $is_null)
+    public static function get_null(?bool $is_null)
     {
         if ($is_null === null) {
             return null;
@@ -103,7 +103,7 @@ class Mysqli extends \Mysqli
      * @param int|null $int
      * @return bool|null
      */
-    public static function getBool(?int $int): ?bool
+    public static function get_bool(?int $int): ?bool
     {
         if ($int === null) {
             return null;
@@ -115,7 +115,7 @@ class Mysqli extends \Mysqli
      * @param int $int
      * @return bool
      */
-    public static function requireBool(int $int): bool
+    public static function require_bool(int $int): bool
     {
         return $int !== 0;
     }

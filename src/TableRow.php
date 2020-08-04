@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kuvardin\FastMysqli;
 
 use DateTime;
+use Error;
 use Generator;
 use Kuvardin\FastMysqli\Exceptions\AlreadyExists;
 use Kuvardin\FastMysqli\Exceptions\MysqliError;
