@@ -130,7 +130,7 @@ abstract class TableRow
     /**
      * @param SelectionData|null $selection_data
      * @param array|null $filters
-     * @return Generator
+     * @return Generator|static[]
      * @throws MysqliError
      */
     final public static function getSelection(?SelectionData $selection_data, ?array $filters): Generator
