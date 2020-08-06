@@ -109,6 +109,15 @@ class Mysqli extends \Mysqli
     }
 
     /**
+     * @param array $values
+     * @return In
+     */
+    public static function in_array(array $values): In
+    {
+        return new In($values);
+    }
+
+    /**
      * @param int|null $int
      * @return bool|null
      */
