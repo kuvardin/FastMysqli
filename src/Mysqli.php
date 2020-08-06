@@ -100,6 +100,15 @@ class Mysqli extends \Mysqli
     }
 
     /**
+     * @param array $values
+     * @return NotIn
+     */
+    public static function not_in_array(array $values): NotIn
+    {
+        return new NotIn($values);
+    }
+
+    /**
      * @param int|null $int
      * @return bool|null
      */
@@ -225,23 +234,47 @@ class Mysqli extends \Mysqli
                     $expression .= 'IS NOT NULL';
                 } elseif ($where_value instanceof IsNull) {
                     $expression .= 'IS NULL';
-                } else {
-                    $expression .= '= ';
-                    if ($where_value instanceof TableRow) {
-                        $expression .= $where_value->getId();
-                    } elseif (is_bool($where_value)) {
-                        $expression .= $where_value ? '1' : '0';
-                    } elseif (is_numeric($where_value)) {
-                        $expression .= $where_value;
-                    } else {
-                        $expression .= "'{$this->filter($where_value)}'";
+                } elseif ($where_value instanceof NotIn) {
+                    $array_items = [];
+                    foreach ($where_value as $array_item) {
+                        $array_items[] = $this->filter_scalar_value($array_item);
                     }
+                    $expression .= 'NOT IN (' . implode(', ', $array_items) . ')';
+                } elseif ($where_value instanceof In) {
+                    $array_items = [];
+                    foreach ($where_value as $array_item) {
+                        $array_items[] = $this->filter_scalar_value($array_item);
+                    }
+                    $expression .= 'IN (' . implode(', ', $array_items) . ')';
+                } else {
+                    $expression .= '= ' . $this->filter_scalar_value($where_value);
                 }
                 $expressions[] = $expression;
             }
         }
 
         return $expressions === [] ? '1' : implode(" $operation ", $expressions);
+    }
+
+    /**
+     * @param mixed $value
+     * @return mixed
+     */
+    private function filter_scalar_value($value)
+    {
+        if ($value instanceof TableRow) {
+            return $value->getId();
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        if (is_numeric($value)) {
+            return $value;
+        }
+
+        return "'{$this->filter($value)}'";
     }
 
     /**
