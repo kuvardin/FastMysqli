@@ -12,7 +12,7 @@ use mysqli_result;
 /**
  * Class Mysqli
  *
- * @package Kuvardin\FastMysqi
+ * @package Kuvardin\FastMysqli
  * @author Maxim Kuvardin <maxim@kuvard.in>
  */
 class Mysqli extends \Mysqli
