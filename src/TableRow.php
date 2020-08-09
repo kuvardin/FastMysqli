@@ -285,6 +285,14 @@ abstract class TableRow
         return new DateTime("@{$this->creation_date}");
     }
 
+    public function deleteFromCache(): void
+    {
+        if (isset(self::$cache[static::getDatabaseTableName()][$this->id])) {
+            $this->save();
+            unset(self::$cache[static::getDatabaseTableName()][$this->id]);
+        }
+    }
+
     /**
      * Class destructor
      */
