@@ -100,21 +100,21 @@ class Mysqli extends \Mysqli
     }
 
     /**
-     * @param array $values
-     * @return NotIn
+     * @param array|null $values
+     * @return NotIn|null
      */
-    public static function not_in_array(array $values): NotIn
+    public static function not_in_array(?array $values): ?NotIn
     {
-        return new NotIn($values);
+        return empty($values) ? null : new NotIn($values);
     }
 
     /**
-     * @param array $values
-     * @return In
+     * @param array|null $values
+     * @return In|null
      */
-    public static function in_array(array $values): In
+    public static function in_array(?array $values): ?In
     {
-        return new In($values);
+        return empty($values) ? null : new In($values);
     }
 
     /**
