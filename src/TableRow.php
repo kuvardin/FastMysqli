@@ -171,11 +171,11 @@ abstract class TableRow
     }
 
     /**
-     * @param $filters
+     * @param null|mixed $filters
      * @return int
      * @throws MysqliError
      */
-    final public static function count($filters): int
+    final public static function count($filters = null): int
     {
         return self::$mysqli->fast_count(static::getDatabaseTableName(), $filters);
     }
