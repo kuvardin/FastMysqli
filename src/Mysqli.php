@@ -245,13 +245,13 @@ class Mysqli extends \Mysqli
                     $expression .= 'IS NULL';
                 } elseif ($where_value instanceof NotIn) {
                     $array_items = [];
-                    foreach ($where_value as $array_item) {
+                    foreach ($where_value->getValues() as $array_item) {
                         $array_items[] = $this->filter_scalar_value($array_item);
                     }
                     $expression .= 'NOT IN (' . implode(', ', $array_items) . ')';
                 } elseif ($where_value instanceof In) {
                     $array_items = [];
-                    foreach ($where_value as $array_item) {
+                    foreach ($where_value->getValues() as $array_item) {
                         $array_items[] = $this->filter_scalar_value($array_item);
                     }
                     $expression .= 'IN (' . implode(', ', $array_items) . ')';
