@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kuvardin\FastMysqli;
 
 use DateTime;
+use DateTimeZone;
 use Error;
 use Generator;
 use Kuvardin\FastMysqli\Exceptions\AlreadyExists;
@@ -42,6 +43,11 @@ abstract class TableRow
      * @var array
      */
     private array $edited_fields = [];
+
+    /**
+     * @var DateTimeZone|null
+     */
+    private static ?DateTimeZone $timezone = null;
 
     /**
      * TableRow constructor.
@@ -190,7 +196,13 @@ abstract class TableRow
     final protected static function createWithFieldsValues(?int $id, array $data, int $creation_date = null): self
     {
         $id === null ?: ($data['id'] = $id);
-        $data['creation_date'] = $creation_date ?? time();
+        if ($creation_date !== null) {
+            $data['creation_date'] = $creation_date;
+        } else {
+            $data['creation_date'] =
+                (new DateTime('now', self::$timezone ??= new DateTimeZone(date_default_timezone_get())))
+                    ->getTimestamp();
+        }
         self::$mysqli->fast_add(static::getDatabaseTableName(), $data);
         return self::requireById($id ?? self::$mysqli->insert_id);
     }
