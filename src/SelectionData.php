@@ -163,4 +163,20 @@ class SelectionData
         return $sort === self::SORT_ASC ||
             $sort === self::SORT_DESC;
     }
+
+    /**
+     * @param int|null $limit
+     * @param int|null $offset
+     * @param string|null $ord
+     * @param string|null $sort
+     * @return static
+     */
+    public static function make(int $limit = null, int $offset = null, string $ord = null, string $sort = null): self
+    {
+        return (new SelectionData(null, $ord === null ? null : [$ord]))
+            ->setLimit($limit)
+            ->setOffset($offset)
+            ->setOrd($ord)
+            ->setSort($sort);
+    }
 }
