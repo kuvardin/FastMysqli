@@ -6,7 +6,6 @@ namespace Kuvardin\FastMysqli;
 
 use DateTime;
 use DateTimeZone;
-use Error;
 use Generator;
 use Kuvardin\FastMysqli\Exceptions\AlreadyExists;
 use Kuvardin\FastMysqli\Exceptions\MysqliError;
@@ -277,12 +276,10 @@ abstract class TableRow
     final public function setFieldValue(string $field_name, &$variable, $new_value): self
     {
         if ($new_value instanceof self) {
-            if (($new_value === null && $variable !== null) ||
-                ($new_value !== null && $variable !== $new_value->getId())) {
-                $variable = $new_value === null ? null : $new_value->getId();
-                $this->edited_fields[$field_name] = $new_value === null ? null : $new_value->getId();
-            }
-        } elseif ($variable !== $new_value) {
+            $new_value = $new_value->getId();
+        }
+
+        if ($variable !== $new_value) {
             $variable = $new_value;
             $this->edited_fields[$field_name] = $new_value;
         }
