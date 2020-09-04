@@ -322,4 +322,12 @@ abstract class TableRow
         }
         return $this;
     }
+
+    /**
+     * @return array
+     */
+    public function getEditedFields(): array
+    {
+        return $this->edited_fields;
+    }
 }
