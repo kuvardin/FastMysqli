@@ -66,6 +66,32 @@ class SelectionData
     }
 
     /**
+     * @param string $sort
+     * @return bool
+     */
+    public static function checkSort(string $sort): bool
+    {
+        return $sort === self::SORT_ASC ||
+            $sort === self::SORT_DESC;
+    }
+
+    /**
+     * @param int|null $limit
+     * @param int|null $offset
+     * @param string|null $ord
+     * @param string|null $sort
+     * @return static
+     */
+    public static function make(int $limit = null, int $offset = null, string $ord = null, string $sort = null): self
+    {
+        return (new SelectionData(null, $ord === null ? null : [$ord]))
+            ->setLimit($limit)
+            ->setOffset($offset)
+            ->setOrd($ord)
+            ->setSort($sort);
+    }
+
+    /**
      * @return int|null
      */
     public function getLimit(): ?int
@@ -155,28 +181,68 @@ class SelectionData
     }
 
     /**
-     * @param string $sort
-     * @return bool
+     * @return int
      */
-    public static function checkSort(string $sort): bool
+    public function getPage(): int
     {
-        return $sort === self::SORT_ASC ||
-            $sort === self::SORT_DESC;
+        if ($this->limit === null) {
+            throw new Error('Limit must be not null');
+        }
+
+        if ($this->total_amount === null) {
+            throw new Error('Total amount must not be null');
+        }
+
+        if ($this->offset === null) {
+            return 1;
+        }
+
+        return (int)($this->offset / $this->limit);
     }
 
     /**
-     * @param int|null $limit
-     * @param int|null $offset
-     * @param string|null $ord
-     * @param string|null $sort
-     * @return static
+     * @return int
      */
-    public static function make(int $limit = null, int $offset = null, string $ord = null, string $sort = null): self
+    public function getPagesNumber(): int
     {
-        return (new SelectionData(null, $ord === null ? null : [$ord]))
-            ->setLimit($limit)
-            ->setOffset($offset)
-            ->setOrd($ord)
-            ->setSort($sort);
+        if ($this->limit === null) {
+            throw new Error('Limit must be not null');
+        }
+
+        if ($this->total_amount === null) {
+            throw new Error('Total amount must not be null');
+        }
+
+        $result = (int)($this->total_amount/$this->limit);
+        if ($this->total_amount % $this->limit) {
+            $result++;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param int $page
+     * @return int
+     */
+    public function setPage(int $page): int
+    {
+        if ($this->limit === null) {
+            throw new Error('Limit must be not null');
+        }
+
+        if ($this->total_amount === null) {
+            throw new Error('Total amount must not be null');
+        }
+
+        $offset = $this->limit * ($page - 1);
+        if ($offset >= $this->total_amount) {
+            $page = (int)($this->total_amount / $this->limit);
+            $this->offset = $this->limit * $page;
+            return $page + 1;
+        }
+
+        $this->offset = $offset;
+        return $page;
     }
 }
