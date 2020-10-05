@@ -280,7 +280,7 @@ class Mysqli extends \Mysqli
         }
 
         if (is_numeric($value)) {
-            return $value;
+            return "'$value'";
         }
 
         return "'{$this->filter($value)}'";
