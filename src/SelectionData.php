@@ -141,17 +141,23 @@ class SelectionData
      */
     public function getOrd(): ?string
     {
-        return $this->ord;
+        if ($this->ord !== null) {
+            return array_key_exists($this->ord, $this->ord_variants)
+                ? $this->ord_variants[$this->ord]
+                : $this->ord;
+        }
+
+        return null;
     }
 
     /**
      * @param string|null $ord
      * @return $this
-     * @throws Error
      */
     public function setOrd(?string $ord): self
     {
-        if ($ord !== null && $this->ord_variants !== null && !in_array($ord, $this->ord_variants, true)) {
+        if ($ord !== null && $this->ord_variants !== null && !array_key_exists($ord, $this->ord_variants)
+            && !in_array($ord, $this->ord_variants, true)) {
             throw new Error("Unknown ord field: $ord");
         }
         $this->ord = $ord;
