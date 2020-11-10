@@ -203,7 +203,7 @@ class SelectionData
             return 1;
         }
 
-        return (int)($this->offset / $this->limit);
+        return (int)($this->offset / $this->limit) + 1;
     }
 
     /**
@@ -244,11 +244,11 @@ class SelectionData
         $offset = $this->limit * ($page - 1);
         if ($offset >= $this->total_amount) {
             $page = (int)($this->total_amount / $this->limit);
-            $this->offset = $this->limit * $page;
-            return $page + 1;
+            $this->offset = $this->limit * ($page - 1);;
+        } else {
+            $this->offset = $offset;
         }
 
-        $this->offset = $offset;
         return $page;
     }
 }
