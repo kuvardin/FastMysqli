@@ -199,7 +199,7 @@ class SelectionData
             throw new Error('Total amount must not be null');
         }
 
-        if ($this->offset === null) {
+        if (empty($this->offset)) {
             return 1;
         }
 
@@ -241,12 +241,16 @@ class SelectionData
             throw new Error('Total amount must not be null');
         }
 
-        $offset = $this->limit * ($page - 1);
-        if ($offset >= $this->total_amount) {
-            $page = (int)($this->total_amount / $this->limit);
-            $this->offset = $this->limit * ($page - 1);;
+        if ($this->total_amount === 0) {
+            $this->offset = 0;
         } else {
-            $this->offset = $offset;
+            $offset = $this->limit * ($page - 1);
+            if ($offset >= $this->total_amount) {
+                $page = (int)($this->total_amount / $this->limit);
+                $this->offset = $this->limit * ($page - 1);
+            } else {
+                $this->offset = $offset;
+            }
         }
 
         return $page;
