@@ -68,6 +68,14 @@ abstract class TableRow
     }
 
     /**
+     * @param DateTimeZone|null $date_time_zone
+     */
+    final public static function setDateTimeZone(?DateTimeZone $date_time_zone): void
+    {
+        self::$timezone = $date_time_zone;
+    }
+
+    /**
      * @param int $id
      * @return bool
      * @throws Exceptions\MysqliError
@@ -286,7 +294,9 @@ abstract class TableRow
     final public function getCreationDateTime(): DateTime
     {
         $result = new DateTime("@{$this->creation_date}", self::$timezone);
-        $result->setTimezone(self::$timezone);
+        if (self::$timezone !== null) {
+            $result->setTimezone(self::$timezone);
+        }
         return $result;
     }
 
