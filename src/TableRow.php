@@ -195,13 +195,7 @@ abstract class TableRow
     final protected static function createWithFieldsValues(?int $id, array $data, int $creation_date = null): self
     {
         $id === null ?: ($data['id'] = $id);
-        if ($creation_date !== null) {
-            $data['creation_date'] = $creation_date;
-        } else {
-            $data['creation_date'] =
-                (new DateTime('now', self::$timezone ??= new DateTimeZone(date_default_timezone_get())))
-                    ->getTimestamp();
-        }
+        $data['creation_date'] = $creation_date ?? time();
         self::$mysqli->fast_add(static::getDatabaseTableName(), $data);
         return self::requireById($id ?? self::$mysqli->insert_id);
     }
