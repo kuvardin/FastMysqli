@@ -291,7 +291,9 @@ abstract class TableRow
      */
     final public function getCreationDateTime(): DateTime
     {
-        return new DateTime("@{$this->creation_date}");
+        $result = new DateTime("@{$this->creation_date}", self::$timezone);
+        $result->setTimezone(self::$timezone);
+        return $result;
     }
 
     public function deleteFromCache(): void
