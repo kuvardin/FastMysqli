@@ -1,7 +1,7 @@
 {
   "name": "kuvardin/fast-mysqli",
   "description": "Simple PHP class for working with MySQL",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "require": {
     "php": ">=8.0",
     "ext-mysqli": "*"
