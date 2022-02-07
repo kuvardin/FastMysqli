@@ -13,7 +13,6 @@ use Kuvardin\FastMysqli\Exceptions\MysqliError;
 /**
  * Class TableRow
  *
- * @package BA\DataBase
  * @author Maxim Kuvardin <maxim@kuvard.in>
  */
 abstract class TableRow
@@ -184,11 +183,11 @@ abstract class TableRow
     }
 
     /**
-     * @param null|mixed $filters
+     * @param array|string|null $filters
      * @return int
      * @throws MysqliError
      */
-    final public static function count($filters = null): int
+    final public static function count(array|string $filters = null): int
     {
         return self::$mysqli->fast_count(static::getDatabaseTableName(), $filters);
     }
@@ -198,6 +197,7 @@ abstract class TableRow
      * @param array $data
      * @param int|null $creation_date
      * @return static
+     * @throws AlreadyExists
      * @throws MysqliError
      */
     final protected static function createWithFieldsValues(?int $id, array $data, int $creation_date = null): self
@@ -285,6 +285,7 @@ abstract class TableRow
             $variable = $new_value;
             $this->edited_fields[$field_name] = $new_value;
         }
+
         return $this;
     }
 
@@ -300,6 +301,10 @@ abstract class TableRow
         return $result;
     }
 
+    /**
+     * @return void
+     * @throws MysqliError
+     */
     public function deleteFromCache(): void
     {
         if (isset(self::$cache[static::getDatabaseTableName()][$this->id])) {
@@ -309,7 +314,7 @@ abstract class TableRow
     }
 
     /**
-     * Class destructor
+     * @throws MysqliError
      */
     public function __destruct()
     {

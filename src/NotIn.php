@@ -7,30 +7,27 @@ namespace Kuvardin\FastMysqli;
 /**
  * Class NotIn
  *
- * @package Kuvardin\FastMysqli
  * @author Maxim Kuvardin <maxim@kuvard.in>
  */
 class NotIn
 {
     /**
-     * @var array
+     * @var array|null
      */
-    protected array $values;
+    protected ?array $values;
 
     /**
-     * NotIn constructor.
-     *
-     * @param array $values
+     * @param array|null $values
      */
-    public function __construct(array $values)
+    public function __construct(?array $values)
     {
         $this->values = $values;
     }
 
     /**
-     * @return array
+     * @return array|null
      */
-    public function getValues(): array
+    public function getValues(): ?array
     {
         return $this->values;
     }

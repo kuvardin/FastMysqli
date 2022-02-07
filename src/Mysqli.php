@@ -6,6 +6,7 @@ namespace Kuvardin\FastMysqli;
 
 use DateTime;
 use Error;
+use Kuvardin\FastMysqli\Exceptions\AlreadyExists;
 use Kuvardin\FastMysqli\Exceptions\MysqliError;
 use mysqli_result;
 
@@ -61,7 +62,7 @@ class Mysqli extends \Mysqli
      * @param bool|null $is_null
      * @return IsNull|NotNull|null
      */
-    public static function get_null(?bool $is_null)
+    public static function get_null(?bool $is_null): IsNull|NotNull|null
     {
         if ($is_null === null) {
             return null;
@@ -75,7 +76,7 @@ class Mysqli extends \Mysqli
      */
     public static function is_null(): IsNull
     {
-        return self::$is_null ?? (self::$is_null = new IsNull());
+        return self::$is_null ??= new IsNull();
     }
 
     /**
@@ -83,14 +84,14 @@ class Mysqli extends \Mysqli
      */
     public static function not_null(): NotNull
     {
-        return self::$not_null ?? (self::$not_null = new NotNull());
+        return self::$not_null ??= new NotNull;
     }
 
     /**
      * @param bool|null $not_null
-     * @return IsNull|NotNull|null
+     * @return NotNull|IsNull|null
      */
-    public static function get_not_null(?bool $not_null)
+    public static function get_not_null(?bool $not_null): NotNull|IsNull|null
     {
         if ($not_null === null) {
             return null;
@@ -109,15 +110,6 @@ class Mysqli extends \Mysqli
     }
 
     /**
-     * @param array|null $values
-     * @return In|null
-     */
-    public static function in_array(?array $values): ?In
-    {
-        return empty($values) ? null : new In($values);
-    }
-
-    /**
      * @param int|null $int
      * @return bool|null
      */
@@ -126,6 +118,7 @@ class Mysqli extends \Mysqli
         if ($int === null) {
             return null;
         }
+
         return $int !== 0;
     }
 
@@ -153,17 +146,16 @@ class Mysqli extends \Mysqli
 
     /**
      * @param string $table
-     * @param array|string $row
-     * @param array|string|null $where
+     * @param string|array $row
+     * @param string|array|null $where
      * @param int|null $limit
      * @return bool
      * @throws MysqliError
      */
-    public function fast_update(string $table, $row, $where = null, int $limit = null): bool
+    public function fast_update(string $table, string|array $row, string|array $where = null, int $limit = null): bool
     {
-        $query_string = "UPDATE `{$this->filter($table)}`";
-
-        $query_string .= ' SET ' . (is_string($row) ? $row : $this->fast_datalist_gen($row));
+        $query_string = "UPDATE `{$this->filter($table)}`" .
+            ' SET ' . (is_string($row) ? $row : $this->fast_datalist_gen($row));
 
         if ($where !== null) {
             $query_string .= ' WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where));
@@ -239,25 +231,56 @@ class Mysqli extends \Mysqli
                 $expressions[] = $where_value;
             } else {
                 $expression = "`{$this->filter($where_key)}` ";
+
                 if ($where_value instanceof NotNull) {
                     $expression .= 'IS NOT NULL';
                 } elseif ($where_value instanceof IsNull) {
                     $expression .= 'IS NULL';
                 } elseif ($where_value instanceof NotIn) {
+                    $not_in_values = $where_value->getValues();
+
+                    if ($not_in_values === null) {
+                        continue;
+                    }
+
                     $array_items = [];
                     foreach ($where_value->getValues() as $array_item) {
-                        $array_items[] = $this->filter_scalar_value($array_item);
+                        if ($array_item === null) {
+                            $array_items[] = $this->filter_scalar_value($array_item);
+                        }
                     }
+
+                    if ($array_items === []) {
+                        continue;
+                    }
+
                     $expression .= 'NOT IN (' . implode(', ', $array_items) . ')';
-                } elseif ($where_value instanceof In) {
-                    $array_items = [];
-                    foreach ($where_value->getValues() as $array_item) {
-                        $array_items[] = $this->filter_scalar_value($array_item);
+                } elseif (is_array($where_value)) {
+                    if (count($where_value) === 1) {
+                        $where_value_item = array_values($where_value)[0];
+                        if ($where_value_item === null) {
+                            continue;
+                        }
+
+                        $expression .= '= ' . $this->filter_scalar_value($where_value_item);
+                    } else {
+                        $where_value_items = [];
+                        foreach ($where_value as $item_value) {
+                            if ($item_value !== null) {
+                                $where_value_items[] = $this->filter_scalar_value($item_value);
+                            }
+                        }
+
+                        if ($where_value_items === []) {
+                            continue;
+                        }
+
+                        $expression .= 'IN (' . implode(', ', $where_value_items) . ')';
                     }
-                    $expression .= 'IN (' . implode(', ', $array_items) . ')';
                 } else {
                     $expression .= '= ' . $this->filter_scalar_value($where_value);
                 }
+
                 $expressions[] = $expression;
             }
         }
@@ -267,12 +290,12 @@ class Mysqli extends \Mysqli
 
     /**
      * @param mixed $value
-     * @return mixed
+     * @return string
      */
-    private function filter_scalar_value($value)
+    private function filter_scalar_value(mixed $value): string
     {
         if ($value instanceof TableRow) {
-            return $value->getId();
+            return (string)$value->getId();
         }
 
         if (is_bool($value)) {
@@ -280,7 +303,7 @@ class Mysqli extends \Mysqli
         }
 
         if (is_numeric($value)) {
-            return "'$value'";
+            return (string)$value;
         }
 
         return "'{$this->filter($value)}'";
@@ -292,7 +315,7 @@ class Mysqli extends \Mysqli
      * @return bool|mysqli_result
      * @throws MysqliError
      */
-    public function q(string $query, int $result_mode = null)
+    public function q(string $query, int $result_mode = null): bool|mysqli_result
     {
         $this->queries_counter++;
 
@@ -334,7 +357,7 @@ class Mysqli extends \Mysqli
      * @return bool
      * @throws MysqliError
      */
-    public function fast_delete(string $table, $where = null, int $limit = null): bool
+    public function fast_delete(string $table, string|array $where = null, int $limit = null): bool
     {
         $query_string = "DELETE FROM `{$this->filter($table)}`";
 
@@ -355,7 +378,7 @@ class Mysqli extends \Mysqli
      * @return int
      * @throws MysqliError
      */
-    public function fast_count(string $table, $where = null): int
+    public function fast_count(string $table, string|array $where = null): int
     {
         $query_string = "SELECT COUNT(*) FROM `{$this->filter($table)}`";
 
@@ -369,80 +392,21 @@ class Mysqli extends \Mysqli
 
     /**
      * @param string $table
-     * @param string|array $where
+     * @param string|array|null $where
      * @return bool
      * @throws MysqliError
      */
-    public function fast_check(string $table, $where): bool
+    public function fast_check(string $table, string|array $where = null): bool
     {
-        $query_string = "SELECT COUNT(*) FROM `{$this->filter($table)}`" .
-            ' WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where)) .
-            ' LIMIT 1';
+        $query_string = "SELECT COUNT(*) FROM `{$this->filter($table)}`";
+
+        if ($where !== null) {
+            $query_string .= ' WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where));
+        }
+
+        $query_string .= ' LIMIT 1';
+
         return (bool)$this->q($query_string)->fetch_array()[0];
-    }
-
-    /**
-     * @param array $data
-     * @param string $operation
-     * @return string
-     * @throws Error
-     */
-    public function fast_generate_where(array $data, string $operation = 'AND'): string
-    {
-        if (empty($data)) {
-            return '1';
-        }
-
-        $result = '';
-        $s = 0;
-        $data_length = count($data);
-        foreach ($data as $where_key => $where_value) {
-            if (is_string($where_value)) {
-                $result .= $where_value;
-            } else {
-                $raw = $where_value[3] ?? false;
-                $result .= '`' . $where_value[0] . '` ' . $where_value[1] . ' ';
-                if (is_bool($where_value[2])) {
-                    $result .= $where_value[2] ? '1' : '0';
-                } elseif (is_int($where_value[2]) || is_float($where_value[2])) {
-                    $result .= $where_value[2];
-                } elseif ($where_value[2] instanceof TableRow) {
-                    $result .= $where_value[2]->getId();
-                } elseif (is_string($where_value[2])) {
-                    $result .= $raw ? $where_value[2]
-                        : ('\'' . $this->filter($where_value[2]) . '\'');
-                } elseif (is_array($where_value[2])) {
-                    $where_items = [];
-                    foreach ($where_value[2] as $item_value) {
-                        if (is_string($item_value)) {
-                            $where_items[] = '\'' . ($raw ? $item_value : $this->filter($item_value)) . '\'';
-                        } elseif (is_bool($item_value)) {
-                            $where_items[] = $item_value ? '1' : '0';
-                        } elseif (is_int($item_value) || is_float($item_value)) {
-                            $where_items[] = (string)$item_value;
-                        } elseif ($item_value instanceof TableRow) {
-                            $where_items[] = (string)$item_value->getId();
-                        } else {
-                            $type = gettype($item_value);
-                            throw new Error("Incorrect set item typed $type with value " .
-                                print_r($item_value, true));
-                        }
-                    }
-
-                    $result .= '(' . implode(', ', $where_items) . ')';
-                } else {
-                    $type = gettype($where_value[2]);
-                    throw new Error("Unknown field {$where_value[0]} typed $type with value " .
-                        print_r($where_value[2], true));
-                }
-            }
-
-            if (++$s < $data_length) {
-                $result .= ' ' . $operation . ' ';
-            }
-        }
-
-        return $result;
     }
 
     /**
@@ -460,19 +424,26 @@ class Mysqli extends \Mysqli
      * @param string|null $ord
      * @param string|null $sort
      * @param int|null $offset
+     * @param string|null $order_by_raw
+     * @param string|null $select_expr_raw
      * @return mysqli_result
      * @throws MysqliError
      */
-    public function fast_select(string $table, $where = null, int $limit = null, string $ord = null,
-        string $sort = null, int $offset = null): mysqli_result
+    public function fast_select(string $table, string|array $where = null, int $limit = null, string $ord = null,
+        string $sort = null, int $offset = null, string $order_by_raw = null,
+        string $select_expr_raw = null): mysqli_result
     {
-        $query_string = "SELECT * FROM `{$this->filter($table)}`";
+        $query_string = $select_expr_raw === null
+            ? "SELECT * FROM `{$this->filter($table)}`"
+            : "SELECT $select_expr_raw FROM `{$this->filter($table)}`";
 
         if ($where !== null) {
             $query_string .= ' WHERE ' . (is_string($where) ? $where : $this->fast_where_gen($where));
         }
 
-        if ($ord !== null) {
+        if ($order_by_raw !== null) {
+            $query_string .= " ORDER BY $order_by_raw";
+        } elseif ($ord !== null) {
             $query_string .= " ORDER BY `$ord` $sort ";
         }
 
@@ -530,12 +501,24 @@ class Mysqli extends \Mysqli
      * @param string $table
      * @param string|array $row
      * @return bool
+     * @throws AlreadyExists
      * @throws MysqliError
      */
-    public function fast_add(string $table, $row): bool
+    public function fast_add(string $table, string|array $row): bool
     {
         $query_string = "INSERT INTO `{$this->filter($table)}`";
         $query_string .= ' SET ' . (is_string($row) ? $row : $this->fast_datalist_gen($row));
-        return $this->q($query_string);
+
+        try {
+            $result = $this->q($query_string);
+        } catch (MysqliError $mysqli_error) {
+            if ($mysqli_error->getCode() === 1062) {
+                throw new AlreadyExists();
+            }
+
+            throw $mysqli_error;
+        }
+
+        return $result;
     }
 }

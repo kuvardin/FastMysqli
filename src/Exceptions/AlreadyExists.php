@@ -10,15 +10,14 @@ use Throwable;
 /**
  * Class AlreadyExists
  *
- * @package Kuvardin\FastMysqli\Exceptions
  * @author Maxim Kuvardin <maxim@kuvard.in>
  */
 class AlreadyExists extends Exception
 {
     /**
-     * @var string
+     * @var string|null
      */
-    protected string $class_name;
+    protected ?string $class_name;
 
     /**
      * @var array|null
@@ -26,13 +25,11 @@ class AlreadyExists extends Exception
     protected ?array $fields_values;
 
     /**
-     * AlreadyExists constructor.
-     *
-     * @param string $class_name
+     * @param string|null $class_name
      * @param array|null $fields_values
      * @param Throwable|null $previous
      */
-    public function __construct(string $class_name, array $fields_values = null, Throwable $previous = null)
+    public function __construct(string $class_name = null, array $fields_values = null, Throwable $previous = null)
     {
         $this->class_name = $class_name;
         $this->fields_values = $fields_values;
@@ -44,9 +41,9 @@ class AlreadyExists extends Exception
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getClassName(): string
+    public function getClassName(): ?string
     {
         return $this->class_name;
     }

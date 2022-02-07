@@ -9,7 +9,6 @@ use Error;
 /**
  * Class SelectionData
  *
- * @package Kuvardin\FastMysqli
  * @author Maxim Kuvardin <maxim@kuvard.in>
  */
 class SelectionData
