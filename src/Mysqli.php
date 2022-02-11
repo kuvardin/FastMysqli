@@ -238,14 +238,13 @@ class Mysqli extends \Mysqli
                     $expression .= 'IS NULL';
                 } elseif ($where_value instanceof NotIn) {
                     $not_in_values = $where_value->getValues();
-
                     if ($not_in_values === null) {
                         continue;
                     }
 
                     $array_items = [];
                     foreach ($where_value->getValues() as $array_item) {
-                        if ($array_item === null) {
+                        if ($array_item !== null) {
                             $array_items[] = $this->filter_scalar_value($array_item);
                         }
                     }
