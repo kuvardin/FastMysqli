@@ -39,6 +39,11 @@ class Mysqli extends \Mysqli
     private ?string $log_file_path = null;
 
     /**
+     * @var string|null
+     */
+    public ?string $last_query = null;
+
+    /**
      * Mysqli constructor.
      *
      * @param string|null $host
@@ -316,6 +321,7 @@ class Mysqli extends \Mysqli
      */
     public function q(string $query, int $result_mode = null): bool|mysqli_result
     {
+        $this->last_query = $query;
         $this->queries_counter++;
 
         if ($this->log_file_path !== null) {
