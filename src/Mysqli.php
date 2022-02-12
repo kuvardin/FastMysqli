@@ -306,7 +306,7 @@ class Mysqli extends \Mysqli
             return $value ? '1' : '0';
         }
 
-        if (is_numeric($value)) {
+        if (is_int($value) || is_float($value)) {
             return (string)$value;
         }
 
