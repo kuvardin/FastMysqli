@@ -464,6 +464,18 @@ class Mysqli extends \Mysqli
     }
 
     /**
+     * @param string $column
+     * @param string $table
+     * @param array $filters
+     * @param string $operation
+     * @return string
+     */
+    public function fast_where_in(string $column, string $table, array $filters, string $operation = 'AND'): string
+    {
+        return "`$column` IN (SELECT `id` FROM `$table` WHERE " . $this->fast_where_gen($filters, $operation) . ")";
+    }
+
+    /**
      * @param string $query
      * @param bool $search_all_words
      * @param string[] $columns
