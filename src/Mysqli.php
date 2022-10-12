@@ -9,6 +9,7 @@ use Error;
 use Kuvardin\FastMysqli\Exceptions\AlreadyExists;
 use Kuvardin\FastMysqli\Exceptions\MysqliError;
 use mysqli_result;
+use mysqli_sql_exception;
 
 /**
  * Class Mysqli
@@ -528,7 +529,7 @@ class Mysqli extends \Mysqli
 
         try {
             $result = $this->q($query_string);
-        } catch (MysqliError $mysqli_error) {
+        } catch (MysqliError|mysqli_sql_exception $mysqli_error) {
             if ($mysqli_error->getCode() === 1062) {
                 throw new AlreadyExists();
             }
