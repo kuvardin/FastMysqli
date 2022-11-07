@@ -17,6 +17,9 @@ use Kuvardin\FastMysqli\Exceptions\MysqliError;
  */
 abstract class TableRow
 {
+    public const COL_ID = 'id';
+    public const COL_CREATION_DATE = 'creation_date';
+
     /**
      * @var Mysqli
      */
@@ -54,8 +57,8 @@ abstract class TableRow
      */
     public function __construct(array $data)
     {
-        $this->id = $data['id'];
-        $this->creation_date = $data['creation_date'];
+        $this->id = $data[self::COL_ID];
+        $this->creation_date = $data[self::COL_CREATION_DATE];
     }
 
     /**
@@ -81,7 +84,7 @@ abstract class TableRow
      */
     final public static function checkExistsById(int $id): bool
     {
-        return self::$mysqli->fast_check(static::getDatabaseTableName(), ['id' => $id]);
+        return self::$mysqli->fast_check(static::getDatabaseTableName(), [self::COL_ID => $id]);
     }
 
     /**
@@ -121,12 +124,11 @@ abstract class TableRow
             return null;
         }
 
-        if (empty(self::$cache[static::getDatabaseTableName()][$row['id']])) {
-            self::$cache[static::getDatabaseTableName()][$row['id']] = new static($row);
+        if (empty(self::$cache[static::getDatabaseTableName()][$row[self::COL_ID]])) {
+            self::$cache[static::getDatabaseTableName()][$row[self::COL_ID]] = new static($row);
         }
 
-        return self::$cache[static::getDatabaseTableName()][$row['id']];
-
+        return self::$cache[static::getDatabaseTableName()][$row[self::COL_ID]];
     }
 
     final public static function clearCache(): void
@@ -202,8 +204,8 @@ abstract class TableRow
      */
     final protected static function createWithFieldsValues(?int $id, array $data, int $creation_date = null): self
     {
-        $id === null ?: ($data['id'] = $id);
-        $data['creation_date'] = $creation_date ?? time();
+        $id === null ?: ($data[self::COL_ID] = $id);
+        $data[self::COL_CREATION_DATE] = $creation_date ?? time();
         self::$mysqli->fast_add(static::getDatabaseTableName(), $data);
         return self::requireById($id ?? self::$mysqli->insert_id);
     }
@@ -229,7 +231,7 @@ abstract class TableRow
             return self::$cache[static::getDatabaseTableName()][$id];
         }
 
-        $row = self::$mysqli->fast_select(static::getDatabaseTableName(), ['id' => $id], 1)->fetch_assoc();
+        $row = self::$mysqli->fast_select(static::getDatabaseTableName(), [self::COL_ID => $id], 1)->fetch_assoc();
         if ($row !== null) {
             $instance = new static($row);
             self::$cache[static::getDatabaseTableName()][$id] = $instance;
@@ -265,7 +267,7 @@ abstract class TableRow
      */
     final public function setCreationDate(int $creation_date): self
     {
-        $this->setFieldValue('creation_date', $this->creation_date, $creation_date);
+        $this->setFieldValue(self::COL_CREATION_DATE, $this->creation_date, $creation_date);
         return $this;
     }
 
@@ -328,7 +330,8 @@ abstract class TableRow
     public function save(): self
     {
         if (count($this->edited_fields)) {
-            self::$mysqli->fast_update(static::getDatabaseTableName(), $this->edited_fields, ['id' => $this->id], 1);
+            self::$mysqli->fast_update(static::getDatabaseTableName(), $this->edited_fields,
+                [self::COL_ID => $this->id], 1);
             $this->edited_fields = [];
         }
         return $this;

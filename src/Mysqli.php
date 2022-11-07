@@ -40,6 +40,16 @@ class Mysqli extends \Mysqli
     private ?string $log_file_path = null;
 
     /**
+     * @var bool
+     */
+    public bool $write_log_to_variable = false;
+
+    /**
+     * @var array
+     */
+    public array $log = [];
+
+    /**
      * @var string|null
      */
     public ?string $last_query = null;
@@ -325,15 +335,33 @@ class Mysqli extends \Mysqli
         $this->last_query = $query;
         $this->queries_counter++;
 
-        if ($this->log_file_path !== null) {
+        if ($this->log_file_path !== null || $this->write_log_to_variable) {
             $start_time = microtime(true);
             $result = $this->query($query, $result_mode ?? MYSQLI_STORE_RESULT);
-            $time = (microtime(true) - $start_time) * 1000;
-            $date_time = (new DateTime())->format('Y.m.d H:i:s:u');
-            $log_text = "[$date_time|$time] " . str_replace(PHP_EOL, '\\n', $query) . PHP_EOL;
-            $f = fopen($this->log_file_path, 'ab');
-            fwrite($f, $log_text);
-            fclose($f);
+            $duration = (microtime(true) - $start_time) * 1000;
+            $date_time = new DateTime();
+
+            if ($this->write_log_to_variable) {
+                $this->log[] = [
+                    'date' => $date_time->format('Y.m.d H:i:s:u'),
+                    'timestamp' => $date_time->getTimestamp(),
+                    'duration' => $duration,
+                    'query' => $query,
+                ];
+            }
+
+            if ($this->log_file_path !== null) {
+                $log_text = sprintf(
+                    "[%s|%.3f] %s\n",
+                    $date_time->format('Y.m.d H:i:s:u'),
+                    $duration,
+                    str_replace(PHP_EOL, ' ', $query),
+                );
+
+                $f = fopen($this->log_file_path, 'ab');
+                fwrite($f, $log_text);
+                fclose($f);
+            }
         } else {
             $result = $this->query($query, $result_mode ?? MYSQLI_STORE_RESULT);
         }
