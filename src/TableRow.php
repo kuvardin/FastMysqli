@@ -9,6 +9,7 @@ use DateTimeZone;
 use Generator;
 use Kuvardin\FastMysqli\Exceptions\AlreadyExists;
 use Kuvardin\FastMysqli\Exceptions\MysqliError;
+use RuntimeException;
 
 /**
  * Class TableRow
@@ -20,9 +21,6 @@ abstract class TableRow
     public const COL_ID = 'id';
     public const COL_CREATION_DATE = 'creation_date';
 
-    /**
-     * @var Mysqli
-     */
     protected static Mysqli $mysqli;
 
     /**
@@ -30,56 +28,28 @@ abstract class TableRow
      */
     private static array $cache = [];
 
-    /**
-     * @var int
-     */
     protected int $id;
-
-    /**
-     * @var int
-     */
     protected int $creation_date;
-
-    /**
-     * @var array
-     */
-    private array $edited_fields = [];
-
-    /**
-     * @var DateTimeZone|null
-     */
+    protected array $edited_fields = [];
     private static ?DateTimeZone $timezone = null;
 
-    /**
-     * TableRow constructor.
-     *
-     * @param array $data
-     */
     public function __construct(array $data)
     {
         $this->id = $data[self::COL_ID];
         $this->creation_date = $data[self::COL_CREATION_DATE];
     }
 
-    /**
-     * @param Mysqli $mysqli
-     */
     final public static function setMysqli(Mysqli $mysqli): void
     {
         self::$mysqli = $mysqli;
     }
 
-    /**
-     * @param DateTimeZone|null $date_time_zone
-     */
     final public static function setDateTimeZone(?DateTimeZone $date_time_zone): void
     {
         self::$timezone = $date_time_zone;
     }
 
     /**
-     * @param int $id
-     * @return bool
      * @throws Exceptions\MysqliError
      */
     final public static function checkExistsById(int $id): bool
@@ -87,35 +57,37 @@ abstract class TableRow
         return self::$mysqli->fast_check(static::getDatabaseTableName(), [self::COL_ID => $id]);
     }
 
-    /**
-     * @return string
-     */
     abstract public static function getDatabaseTableName(): string;
 
     /**
-     * @param array $data
-     * @param string|null $ord
-     * @param string|null $sort
-     * @param int|null $offset
      * @return static
      * @throws MysqliError
      */
-    final public static function requireByFieldsValues(array $data, string $ord = null, string $sort = null,
-        int $offset = null): self
+    final public static function requireByFieldsValues(
+        array $data,
+        string $ord = null,
+        string $sort = null,
+        int $offset = null,
+    ): self
     {
         return self::makeByFieldsValues($data, $ord, $sort, $offset);
     }
 
+    public static function getCache(): array
+    {
+        return self::$cache;
+    }
+
     /**
-     * @param array $data
-     * @param string|null $ord
-     * @param string|null $sort
-     * @param int|null $offset
      * @return static|null
      * @throws MysqliError
      */
-    final public static function makeByFieldsValues(array $data, string $ord = null, string $sort = null,
-        int $offset = null): ?self
+    final public static function makeByFieldsValues(
+        array $data,
+        string $ord = null,
+        string $sort = null,
+        int $offset = null,
+    ): ?self
     {
         $row = self::$mysqli
             ->fast_select(static::getDatabaseTableName(), $data, 1, $ord, $sort, $offset)
@@ -142,8 +114,6 @@ abstract class TableRow
     }
 
     /**
-     * @param SelectionData|null $selection_data
-     * @param array|null $filters
      * @return Generator|static[]
      * @throws MysqliError
      */
@@ -151,8 +121,14 @@ abstract class TableRow
     {
         $rows = $selection_data === null
             ? self::$mysqli->fast_select(static::getDatabaseTableName(), $filters)
-            : self::$mysqli->fast_select(static::getDatabaseTableName(), $filters, $selection_data->getLimit(),
-                $selection_data->getOrd(), $selection_data->getSort(), $selection_data->getOffset());
+            : self::$mysqli->fast_select(
+                static::getDatabaseTableName(),
+                $filters,
+                $selection_data->getLimit(),
+                $selection_data->getOrd(),
+                $selection_data->getSort(),
+                $selection_data->getOffset()
+            );
         if (!$rows->num_rows) {
             return;
         }
@@ -176,17 +152,12 @@ abstract class TableRow
         return $object;
     }
 
-    /**
-     * @return int
-     */
     public function getId(): int
     {
         return $this->id;
     }
 
     /**
-     * @param array|string|null $filters
-     * @return int
      * @throws MysqliError
      */
     final public static function count(array|string $filters = null): int
@@ -195,9 +166,6 @@ abstract class TableRow
     }
 
     /**
-     * @param int|null $id
-     * @param array $data
-     * @param int|null $creation_date
      * @return static
      * @throws AlreadyExists
      * @throws MysqliError
@@ -211,7 +179,6 @@ abstract class TableRow
     }
 
     /**
-     * @param int $id
      * @return static
      * @throws MysqliError
      */
@@ -220,8 +187,29 @@ abstract class TableRow
         return static::makeById($id);
     }
 
+    public static function cacheByIds(array $ids): void
+    {
+        foreach ($ids as $id) {
+            if (!is_int($id) && !preg_match('|^-?\d+$|', $id)) {
+                throw new RuntimeException("Not integer value: $id");
+            }
+        }
+
+        $rows = self::$mysqli->fast_select(
+            static::getDatabaseTableName(),
+            [
+                TableRow::COL_ID => $ids,
+            ],
+        );
+
+        if ($rows->num_rows) {
+            while ($row = $rows->fetch_assoc()) {
+                self::$cache[static::getDatabaseTableName()][$row[TableRow::COL_ID]] = new static($row);
+            }
+        }
+    }
+
     /**
-     * @param int $id
      * @return static|null
      * @throws MysqliError
      */
@@ -242,7 +230,6 @@ abstract class TableRow
     }
 
     /**
-     * @param array $data
      * @throws AlreadyExists
      * @throws MysqliError
      */
@@ -253,31 +240,22 @@ abstract class TableRow
         }
     }
 
-    /**
-     * @return int
-     */
     final public function getCreationDate(): int
     {
         return $this->creation_date;
     }
 
-    /**
-     * @param int $creation_date
-     * @return $this
-     */
-    final public function setCreationDate(int $creation_date): self
+    final public function setCreationDate(int $creation_date): void
     {
         $this->setFieldValue(self::COL_CREATION_DATE, $this->creation_date, $creation_date);
-        return $this;
     }
 
     /**
      * @param string $field_name
-     * @param $variable
-     * @param $new_value
-     * @return $this
+     * @param mixed $variable
+     * @param mixed $new_value
      */
-    final public function setFieldValue(string $field_name, &$variable, $new_value): self
+    final public function setFieldValue(string $field_name, mixed &$variable, mixed $new_value): void
     {
         if ($new_value instanceof self) {
             $new_value = $new_value->getId();
@@ -287,8 +265,6 @@ abstract class TableRow
             $variable = $new_value;
             $this->edited_fields[$field_name] = $new_value;
         }
-
-        return $this;
     }
 
     /**
@@ -304,7 +280,6 @@ abstract class TableRow
     }
 
     /**
-     * @return void
      * @throws MysqliError
      */
     public function deleteFromCache(): void
@@ -324,22 +299,17 @@ abstract class TableRow
     }
 
     /**
-     * @return $this
      * @throws MysqliError
      */
-    public function save(): self
+    public function save(): void
     {
         if (count($this->edited_fields)) {
             self::$mysqli->fast_update(static::getDatabaseTableName(), $this->edited_fields,
                 [self::COL_ID => $this->id], 1);
             $this->edited_fields = [];
         }
-        return $this;
     }
 
-    /**
-     * @return array
-     */
     public function getEditedFields(): array
     {
         return $this->edited_fields;

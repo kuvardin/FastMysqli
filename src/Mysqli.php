@@ -463,9 +463,16 @@ class Mysqli extends \Mysqli
      * @return mysqli_result
      * @throws MysqliError
      */
-    public function fast_select(string $table, string|array $where = null, int $limit = null, string $ord = null,
-        string $sort = null, int $offset = null, string $order_by_raw = null,
-        string $select_expr_raw = null): mysqli_result
+    public function fast_select(
+        string $table,
+        string|array $where = null,
+        int $limit = null,
+        string $ord = null,
+        string $sort = null,
+        int $offset = null,
+        string $order_by_raw = null,
+        string $select_expr_raw = null,
+    ): mysqli_result
     {
         $query_string = $select_expr_raw === null
             ? "SELECT * FROM `{$this->filter($table)}`"
