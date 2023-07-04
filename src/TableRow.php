@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace Kuvardin\FastMysqli;
 
-use DateTime;
-use DateTimeZone;
 use Generator;
 use Kuvardin\FastMysqli\Exceptions\AlreadyExists;
 use Kuvardin\FastMysqli\Exceptions\MysqliError;
 use RuntimeException;
 
 /**
- * Class TableRow
- *
  * @author Maxim Kuvardin <maxim@kuvard.in>
  */
 abstract class TableRow
@@ -31,7 +27,6 @@ abstract class TableRow
     protected int $id;
     protected int $creation_date;
     protected array $edited_fields = [];
-    private static ?DateTimeZone $timezone = null;
 
     public function __construct(array $data)
     {
@@ -42,11 +37,6 @@ abstract class TableRow
     final public static function setMysqli(Mysqli $mysqli): void
     {
         self::$mysqli = $mysqli;
-    }
-
-    final public static function setDateTimeZone(?DateTimeZone $date_time_zone): void
-    {
-        self::$timezone = $date_time_zone;
     }
 
     /**
@@ -60,7 +50,6 @@ abstract class TableRow
     abstract public static function getDatabaseTableName(): string;
 
     /**
-     * @return static
      * @throws MysqliError
      */
     final public static function requireByFieldsValues(
@@ -68,7 +57,7 @@ abstract class TableRow
         string $ord = null,
         string $sort = null,
         int $offset = null,
-    ): self
+    ): static
     {
         return self::makeByFieldsValues($data, $ord, $sort, $offset);
     }
@@ -149,6 +138,7 @@ abstract class TableRow
         } else {
             $object = self::$cache[$object::getDatabaseTableName()][$object->getId()];
         }
+
         return $object;
     }
 
@@ -166,11 +156,10 @@ abstract class TableRow
     }
 
     /**
-     * @return static
      * @throws AlreadyExists
      * @throws MysqliError
      */
-    final protected static function createWithFieldsValues(?int $id, array $data, int $creation_date = null): self
+    final protected static function createWithFieldsValues(?int $id, array $data, int $creation_date = null): static
     {
         $id === null ?: ($data[self::COL_ID] = $id);
         $data[self::COL_CREATION_DATE] = $creation_date ?? time();
@@ -179,14 +168,16 @@ abstract class TableRow
     }
 
     /**
-     * @return static
      * @throws MysqliError
      */
-    final public static function requireById(int $id): self
+    final public static function requireById(int $id): static
     {
         return static::makeById($id);
     }
 
+    /**
+     * @throws MysqliError
+     */
     public static function cacheByIds(array $ids): void
     {
         foreach ($ids as $id) {
@@ -195,12 +186,9 @@ abstract class TableRow
             }
         }
 
-        $rows = self::$mysqli->fast_select(
-            static::getDatabaseTableName(),
-            [
-                TableRow::COL_ID => $ids,
-            ],
-        );
+        $rows = self::$mysqli->fast_select(static::getDatabaseTableName(), [
+            TableRow::COL_ID => $ids,
+        ]);
 
         if ($rows->num_rows) {
             while ($row = $rows->fetch_assoc()) {
@@ -210,10 +198,9 @@ abstract class TableRow
     }
 
     /**
-     * @return static|null
      * @throws MysqliError
      */
-    final public static function makeById(int $id): ?self
+    final public static function makeById(int $id): ?static
     {
         if (!empty(self::$cache[static::getDatabaseTableName()][$id])) {
             return self::$cache[static::getDatabaseTableName()][$id];
@@ -250,33 +237,23 @@ abstract class TableRow
         $this->setFieldValue(self::COL_CREATION_DATE, $this->creation_date, $creation_date);
     }
 
-    /**
-     * @param string $field_name
-     * @param mixed $variable
-     * @param mixed $new_value
-     */
-    final public function setFieldValue(string $field_name, mixed &$variable, mixed $new_value): void
+    final public function setFieldValue(
+        string $field_name,
+        mixed &$variable,
+        mixed $new_value,
+        bool $force = false,
+    ): static
     {
         if ($new_value instanceof self) {
             $new_value = $new_value->getId();
         }
 
-        if ($variable !== $new_value) {
+        if ($force || $variable !== $new_value) {
             $variable = $new_value;
             $this->edited_fields[$field_name] = $new_value;
         }
-    }
 
-    /**
-     * @return DateTime
-     */
-    final public function getCreationDateTime(): DateTime
-    {
-        $result = new DateTime("@{$this->creation_date}", self::$timezone);
-        if (self::$timezone !== null) {
-            $result->setTimezone(self::$timezone);
-        }
-        return $result;
+        return $this;
     }
 
     /**
